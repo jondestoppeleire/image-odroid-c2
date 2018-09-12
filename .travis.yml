@@ -1,0 +1,41 @@
+# Use a full VM since we'll be using docker
+#
+# https://docs.travis-ci.com/user/reference/overview/#virtualisation-environment-vs-operating-system
+# https://docs.travis-ci.com/user/docker/
+
+sudo: required
+dist: trusty
+
+language: c
+
+addons:
+  apt:
+    packages:
+      - awscli
+
+services:
+  - docker
+
+# Install ubuntu packages or custom services
+before_install:
+  - curl https://s3.amazonaws.com/eatsa-packages/build-framework/build-framework-master-1.5.0.tgz -o /tmp/bf.tgz
+  - tar --directory $HOME -xzf /tmp/bf.tgz
+  - ./mk_build.env.sh ubuntu-xenial
+  - docker ps -a
+
+# Install any dependencies required
+install:
+  - shellcheck mk_build_env.sh run_build_env.sh
+
+deploy:
+  skip_cleanup: true
+  provider: s3
+  access_key_id: $AWS_ACCESS_KEY_ID
+  secret_access_key: $AWS_SECRET_ACCESS_KEY
+  bucket: eatsa-packages
+  local-dir: pkg
+  upload-dir: wise-display
+  acl: private
+  on:
+    all_branches: true
+    condition: $AWS_SECRET_ACCESS_KEY != ""
