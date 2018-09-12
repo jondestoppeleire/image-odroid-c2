@@ -16,25 +16,19 @@ addons:
 services:
   - docker
 
-# Install ubuntu packages or custom services
-#
-# Note that build-setup.sh should be run before `docker build`.
-# The `docker build` will give warnings from binfmt_misc, but may actually
-# error out if binfmt_support package is not installed beforehand.
-before_install:
-  - curl https://s3.amazonaws.com/eatsa-packages/build-framework/build-framework-master-1.5.0.tgz -o /tmp/bf.tgz
-  - tar --directory $HOME -xzf /tmp/bf.tgz
-  - build-scripts/build-setup.sh
-  - ./mk_build_env.sh ubuntu-xenial
-  #- docker build -t eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial dockerfiles/ubuntu-xenial
-  - docker images
-
-# Install any dependencies required
+# Note that `build-setup.sh` should be run before `docker build`.
+# Without the packages installed on the host, specifically binfmt_support,
+# the docker image will not be built correctly.  With the package installed,
+# the docker image build will only produce warnings, but the end image will
+# be functional.
 install:
   - shellcheck mk_build_env.sh run_build_env.sh build-scripts/build-setup.sh
+  - build-scripts/build-setup.sh
+  - ./mk_build_env.sh ubuntu-xenial
 
 script:
-- echo "Run the build here?"
+- ./run_build_env.sh ubuntu-xenial
+- exit
 
 deploy:
   skip_cleanup: true

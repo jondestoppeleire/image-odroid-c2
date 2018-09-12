@@ -1,5 +1,6 @@
 # This is unused as of Sept. 11, 2018
-# However, it's just an example of how to build new OS environments.
+# The directory layout and this file demonstrates how to make new
+# build environments while keeping the existing ones running in parallel.
 FROM ubuntu:bionic
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y && \
