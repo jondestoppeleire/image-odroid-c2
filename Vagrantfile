@@ -91,35 +91,6 @@ Vagrant.configure('2') do |config|
     echo "Done."
   SHELL
 
-  # Add the project to the home directory
-  #
-  # Running `sudo ./utils/mk_filesystem_artifact.sh...` inside the mounted dir
-  # /vagrant doesn't work, as the script uses chroot and that seems to run
-  # into odd permissions / access issues.
-  #
-  # So.  We'll copy /vagrant into /home/vagrant/wise-display.  In a travis-ci
-  # build, the project is not run in a specially mounted dir anyways, so this
-  # makes travis-ci parity actually better.
-  config.vm.provision 'shell', inline: <<-SHELL
-    #!/bin/bash
-
-    if [ -d /vagrant ] && [ ! -d /home/vagrant/wise-display ]; then
-      mkdir -p /home/vagrant/wise-display
-
-      # copy files over excluding those specified in .gitignore.
-      # This will prevent copying artifacts (large) produced from being copied.
-      # However, we still need the .git directory due to build-framework and other scripts.
-      #
-      # shellcheck disable=SC2010 - much harder to use `find` w/right format.
-      for node in $(ls -1 /vagrant | grep -vxf /vagrant/.gitignore) .git; do
-        cp -R "/vagrant/$node" "/home/vagrant/wise-display/$node"
-      done
-    fi
-
-    # Set the owner of /home/vagrant/wise-display
-    if [ -d /home/vagrant/wise-display ] && \
-       [ "$(stat -c "%U:%G" /home/vagrant/wise-display)" != "vagrant:vagrant" ]; then
-         sudo chown -R vagrant:vagrant /home/vagrant/wise-display
-    fi
-  SHELL
+  # Run build-scripts/build-setup to get tools
+  config.vm.provision 'shell', path: 'build-scripts/build-setup.sh'
 end
