@@ -1,5 +1,7 @@
 # images-odroid-c2 
 
+[![Build Status](https://travis-ci.com/Keenwawa/image-odroid-c2.svg?branch=master)](https://travis-ci.com/Keenwawa/image-odroid-c2)
+
 Build odroid-c2:
 * full SD card image
 * root file system
