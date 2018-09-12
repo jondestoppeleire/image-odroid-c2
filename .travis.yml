@@ -25,7 +25,8 @@ before_install:
   - curl https://s3.amazonaws.com/eatsa-packages/build-framework/build-framework-master-1.5.0.tgz -o /tmp/bf.tgz
   - tar --directory $HOME -xzf /tmp/bf.tgz
   - build-scripts/build-setup.sh
-  - docker build -t eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial dockerfiles/ubuntu-xenial
+  - mk_build_env.sh ubuntu-xenial
+  #- docker build -t eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial dockerfiles/ubuntu-xenial
   - docker images
 
 # Install any dependencies required

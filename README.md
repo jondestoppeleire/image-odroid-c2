@@ -46,6 +46,8 @@ simulate the travis VM.
     $ vagrant up
     $ vagrant ssh
     $ ls /vagrant
+    (Optional, Vagrantfile should do the following in the provisioning steps)
+    $ sudo ./build-scripts/build-setup.sh
 
 In order to get the right build tools, depending on the Single Board Computer
 platform, docker *may* need to be invovled.
