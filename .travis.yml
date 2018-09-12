@@ -28,7 +28,6 @@ install:
 
 script:
 - ./run_build_env.sh ubuntu-xenial
-- exit
 
 deploy:
   skip_cleanup: true

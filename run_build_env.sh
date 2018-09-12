@@ -34,6 +34,7 @@ if [ "$os_name" = "Darwin" ]; then
      -v "$PWD":"$PWD" -w "$PWD" \
      -v /dev:/dev \
      eatsa-odroid-c2-rootfs:build-env-"$distro" \
+     ./build.sh \
      || exit 1
 else
     # macOS does not have the following, but linux host will:
@@ -45,5 +46,6 @@ else
      -v /dev:/dev \
      -v /run/udev:/run/udev:ro \
      eatsa-odroid-c2-rootfs:build-env-"$distro" \
+     ./build.sh \
      || exit 1
 fi
