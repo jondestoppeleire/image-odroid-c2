@@ -1,7 +1,7 @@
 #!/bin/bash
-
-readonly distro="$1"
-readonly build_dir=dockerfiles/"$distro"
+#
+# Checks to see if a docker image named "eatsa-odroid-c2-rootfs" with tag
+# corresponding to the OS used exists.  Creates the image if doesn't exist.
 
 usage() {
     echo "This script runs \"docker build\" for specific Dockerfiles."
@@ -16,17 +16,20 @@ usage() {
     exit 1
 }
 
-if [ -z "$distro" ]; then
+readonly distro="$1"
+readonly build_dir="dockerfiles/${distro}"
+
+if [ -z "${distro}" ]; then
     usage
 fi
 
-if [ ! -d "$build_dir" ]; then
-    echo "Dockerfile for distro '$distro' does not exist in dockerfiles/"
+if [ ! -d "${build_dir}" ]; then
+    echo "Dockerfile for distro '${distro}' does not exist in dockerfiles/"
     usage
 fi
 
-if ! docker image inspect eatsa-odroid-c2-rootfs:build-env-"$distro" > /dev/null 2>&1; then
-    docker build -t eatsa-odroid-c2-rootfs:build-env-"$distro" "$build_dir"
+if ! docker image inspect eatsa-odroid-c2-rootfs:build-env-"${distro}" > /dev/null 2>&1; then
+    docker build -t eatsa-odroid-c2-rootfs:build-env-"${distro}" "${build_dir}"
 else
-    echo "Using existing Docker image $(docker images -q eatsa-odroid-c2-rootfs:build-env-"$distro")."
+    echo "Using existing Docker image $(docker images -q eatsa-odroid-c2-rootfs:build-env-"${distro}")."
 fi

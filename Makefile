@@ -1,4 +1,4 @@
-SCRIPTS = $(shell find . -type f -name "*.sh")
+SCRIPTS = $(shell find . -type f -name "*.sh" -not -path "./workspace/*" -not -path "./dist/*")
 
 # depends on shellcheck 0.4.6+.  Will fail on 0.3.3.
 .PHONY: shellcheck
@@ -16,4 +16,4 @@ docker_image:
 
 .PHONY: build
 build: docker_image
-	./run_build_env.sh ubuntu-xenial
+	DEBUG=1 ./run_build_env.sh ubuntu-xenial

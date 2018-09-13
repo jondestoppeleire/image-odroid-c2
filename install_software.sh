@@ -7,8 +7,6 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-image_file=$1
-
 usage() {
     echo "Install software for the odroid-c2 for eatsa's uses."
     echo
@@ -19,26 +17,27 @@ usage() {
     exit 1
 }
 
+image_file=$1
 if [ ! -e "${image_file}" ]; then
     echo "image_file '${image_file}' not found."
     usage
 fi
 
-# Mount the image's partitions and write to them.
-
-# find first available loop device.
-loop_device=$(losetup -f)
+# Define globals common throughout this script.
+readonly rootfs_dir="rootfs"
+readonly boot_partition_mount="${rootfs_dir}/media/boot"
+readonly policy_rc_file="/usr/sbin/policy-rc.d"
 
 # Define a cleanup in case the script errs out.
 cleanup() {
     [ -n "${DEBUG}" ] && echo "cleanup called."
 
-    chroot rootfs rm -f /usr/sbin/policy-rc.d || true
+    chroot "${rootfs_dir}" rm -f "${policy_rc_file}" || true
 
     # unmount.
-    chroot rootfs umount /proc /sys /dev/pts || true
-    mountpoint -q rootfs/media/boot && umount rootfs/media/boot
-    mountpoint -q rootfs && umount rootfs
+    chroot "${rootfs_dir}" umount /proc /sys /dev/pts || true
+    mountpoint -q "${boot_partition_mount}" && umount "${boot_partition_mount}"
+    mountpoint -q "${rootfs_dir}" && umount "${rootfs_dir}"
     sync
 
     # Find all loop devices assocated with the file
@@ -53,6 +52,11 @@ cleanup() {
 # cleanup will run when the script exits or if user kills the script.
 trap cleanup EXIT SIGINT SIGQUIT
 
+# Mount the image's partitions and write to them.
+
+# find first available loop device.
+loop_device=$(losetup -f)
+
 # Attached the image file to the loop device.
 losetup "${loop_device}" "${image_file}"
 
@@ -60,30 +64,30 @@ losetup "${loop_device}" "${image_file}"
 partprobe "${loop_device}"
 
 # Create mount points
-mkdir -p rootfs/media/boot
+mkdir -p "${boot_partition_mount}"
 
 # mount.
-mount "${loop_device}p2" rootfs
-mount "${loop_device}p1" rootfs/media/boot
+mount "${loop_device}p2" "${rootfs_dir}"
+mount "${loop_device}p1" "${boot_partition_mount}"
 
-chroot rootfs mount none -t proc /proc
-chroot rootfs mount none -t sysfs /sys
-chroot rootfs mount none -t devpts /dev/pts
+chroot "${rootfs_dir}" mount none -t proc /proc
+chroot "${rootfs_dir}" mount none -t sysfs /sys
+chroot "${rootfs_dir}" mount none -t devpts /dev/pts
 
 # Add a (the Google) nameserver for apt-get to work
-echo "nameserver 8.8.8.8" | chroot rootfs tee /etc/resolv.conf
+echo "nameserver 8.8.8.8" | chroot "${rootfs_dir}" tee /etc/resolv.conf
 
 # disable starting daemons on pkg install (for buggy pkgs that don't detect chroot)
-chroot rootfs tee /usr/sbin/policy-rc.d << _EOF
+chroot "${rootfs_dir}" tee "${policy_rc_file}" << _EOF
 #!/bin/sh
 exit 101
 _EOF
-chmod a+x rootfs/usr/sbin/policy-rc.d
+chmod a+x "${rootfs_dir}/${policy_rc_file}"
 
 # ODROID-C2 specific - DO NOT UPGRADE THIS PACKAGE, broken builds!
-chroot rootfs apt-mark hold bootini
+chroot "${rootfs_dir}" apt-mark hold bootini
 
-chroot rootfs apt-get update
+chroot "${rootfs_dir}" apt-get update
 
 packages=(
     ubuntu-standard
@@ -108,8 +112,8 @@ packages=(
     plymouth-theme-ubuntu-logo
 )
 
-chroot rootfs apt-get install -y --no-install-recommends "${packages[@]}"
-chroot rootfs apt-get install -y ca-certificates --only-upgrade
+chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"
+chroot "${rootfs_dir}" apt-get install -y ca-certificates --only-upgrade
 
 # cleanup invoked.
 exit

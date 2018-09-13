@@ -15,7 +15,7 @@ readonly dist="./dist"
 mkdir -p "${workspace}"
 mkdir -p "${dist}"
 
-cd "${workspace}" || exit 1
+pushd "${workspace}"
 
 # Use a base working ubuntu image for the odroid-c2
 # Saved a copy of the image from https://odroid.in/ubuntu_16.04lts/ to S3.
@@ -53,7 +53,7 @@ fi
 "${mydir}"/install_software.sh "${image_file}"
 
 # get out of ./workspace
-cd .. || exit 1
+popd
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?
