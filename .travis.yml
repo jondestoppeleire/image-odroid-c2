@@ -22,12 +22,11 @@ services:
 # the docker image build will only produce warnings, but the end image will
 # be functional.
 install:
-  - shellcheck mk_build_env.sh run_build_env.sh build-scripts/build-setup.sh build.sh
   - build-scripts/build-setup.sh
-  - ./mk_build_env.sh ubuntu-xenial
+  - make shellcheck
 
 script:
-- ./run_build_env.sh ubuntu-xenial
+- make build
 
 deploy:
   skip_cleanup: true

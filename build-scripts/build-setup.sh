@@ -7,7 +7,8 @@
 
 if apt-get --version > /dev/null 2>&1; then
     sudo apt-get install -y squashfs-tools xorriso genisoimage \
-     qemu-user-static parted dosfstools binfmt-support debootstrap xz-utils
+     qemu-user-static parted dosfstools binfmt-support debootstrap xz-utils \
+     shellcheck
 else
     echo "Cannot find apt-get program. Does your system support it?"
     exit 1

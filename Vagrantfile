@@ -32,22 +32,31 @@ Vagrant.configure('2') do |config|
   # see https://docs.docker.com/install/linux/docker-ce/ubuntu/
   config.vm.provision 'shell', inline: <<-SHELL
     #!/bin/bash
-    sudo DEBIAN_FRONTEND=noninteractive apt-get update || exit 1
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git curl || exit 1
+    set -e
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git curl
 
     if ! sudo apt-key list | grep 0EBFCD88; then
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - || exit 1
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         if ! sudo apt-key list | grep 0EBFCD88; then
             echo "Could not find docker.com's fingerprint 0EBFCD88."
             exit 1;
         fi
         sudo add-apt-repository \
-"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" || exit 1
-        sudo DEBIAN_FRONTEND=noninteractive apt-get update || exit 1
+"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        sudo DEBIAN_FRONTEND=noninteractive apt-get update
     fi
 
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce || exit 1
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoremove || exit 1
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoremove
+
+    # allow vagrant user docker access w/o sudo
+    if ! grep docker /etc/group; then
+        sudo groupadd docker
+    fi
+    if ! groups vagrant | grep docker; then
+        sudo usermod -a -G docker vagrant
+    fi
   SHELL
 
   # .travis.yml:
@@ -61,10 +70,11 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision 'shell', inline: <<-SHELL
     #!/bin/bash
+    set -e
 
     if [ ! -e "#{package_cache}" ]; then
         echo "Downloading #{package_url}"
-        curl -s #{package_url} -o #{package_cache} > /dev/null
+        curl -Ss #{package_url} -o #{package_cache} > /dev/null
 
         if [ ! -s "#{package_cache}" ]; then
             echo "Error downloading to #{package_cache}"

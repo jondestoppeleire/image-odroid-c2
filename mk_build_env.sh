@@ -25,4 +25,8 @@ if [ ! -d "$build_dir" ]; then
     usage
 fi
 
-docker build -t eatsa-odroid-c2-rootfs:build-env-"$distro" "$build_dir" || exit 1
+if ! docker image inspect eatsa-odroid-c2-rootfs:build-env-"$distro" > /dev/null 2>&1; then
+    docker build -t eatsa-odroid-c2-rootfs:build-env-"$distro" "$build_dir"
+else
+    echo "Using existing Docker image $(docker images -q eatsa-odroid-c2-rootfs:build-env-"$distro")."
+fi

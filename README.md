@@ -62,16 +62,28 @@ container.
 
 A convience script to create the docker image, `sudo` as necessary:
 
-    $ sudo ./mk_build_env.sh ubuntu-xenial
+    $ ./mk_build_env.sh ubuntu-xenial
+
+Or
+
+    $ make docker_image
 
 This script goes into the build-env/ directory, finds the ubuntu-xenial
 directory,  and uses the Dockerfile in that subdirectory.
 
 #### Run the image as a container
 
-Also a convience script:
+Using the lower level script to kick off a build:
 
-    $ sudo ./run_build_env.sh ubuntu-xenial
+    $ ./run_build_env.sh ubuntu-xenial
+
+Or
+
+    $ make build
+
+To Debug
+
+    $ ./run_build_env.sh ubuntu-xenial /bin/bash
 
 The containers are set to be deleted when the shell exists, so any work done
 outside of mounted directories will be discarded.
