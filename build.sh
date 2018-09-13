@@ -8,7 +8,7 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-readonly mydir=$PWD
+readonly mydir="$PWD"
 readonly workspace="./workspace"
 readonly dist="./dist"
 
@@ -45,18 +45,12 @@ if [ -e "${image_file_xz}" ]; then
     fi
 fi
 
-# Expand the file size.  This happens to make the last partition of the image larger.
-# 2781872128 is the size of the file after expansion, figured out manually.
-readonly image_file_size=$(wc -c ${image_file} | cut -f 1 -d ' ')
-if [ "${image_file_size}" -lt 2781872128 ]; then
-    # yes, you can grow file size with truncate.
-    truncate --size=+1G ${image_file}
-fi
-
+# Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
-#
-# ... do the expansion below.  This gets into messy town.
-"${mydir}"/resize_filesystem.sh ${image_file} 2
+"${mydir}"/resize.sh "${image_file}" 2
+
+# chroot and install software
+"${mydir}"/install_software.sh "${image_file}"
 
 # get out of ./workspace
 cd .. || exit 1

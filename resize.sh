@@ -12,7 +12,7 @@
 #   - losetup
 #   - parted
 
-# Enable errexit option (on error of any command, exit script)
+# Enable errexit option (exit script on error of any command)
 set -e
 [ -n "${DEBUG}" ] && set -x
 
@@ -47,6 +47,16 @@ if [ "${partition_number}" -gt "${partition_count}" ]; then
     exit 1
 fi
 
+# Expand the file.  This happens to make the last partition of the image larger.
+# 2781872128 is the size of the file after expansion, figured out manually.
+readonly image_file_size=$(wc -c "${image_file}" | cut -f 1 -d ' ')
+if [ "${image_file_size}" -lt 2781872128 ]; then
+    # yes, you can grow file size with truncate.
+    truncate --size=+1G "${image_file}"
+fi
+
+# Expand the file system.
+
 # find first available loop device.
 loop_device=$(losetup -f)
 
@@ -56,7 +66,7 @@ cleanup() {
 
     # Find all loop devices assocated with the file
     # Use the first field in the output (cut)
-    # Replace the last character with null (sed)
+    # Replace the last character ("/dev/loop0:") with nothing (sed)
     # disassociate all the devices
     active_devices=$(losetup -j "${image_file}" | cut -d' ' -f1 | sed 's/.$//')
     for active_device in $active_devices; do
