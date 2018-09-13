@@ -27,14 +27,7 @@ install:
   - ./mk_build_env.sh ubuntu-xenial
 
 script:
-#- ./run_build_env.sh ubuntu-xenial
-- docker run --rm -it -e HOME --privileged \
-     -h eatsa-odroid-c2-build-env \
-     -v "$HOME":"$HOME" \
-     -v "$PWD":"$PWD" -w "$PWD" \
-     -v /dev:/dev \
-     -v /run/udev:/run/udev:ro \
-     eatsa-odroid-c2-rootfs:build-env-"$distro"
+- ./run_build_env.sh ubuntu-xenial
 
 deploy:
   skip_cleanup: true

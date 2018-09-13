@@ -6,8 +6,9 @@
 
 # exit script on command failure not explicitly caught
 set -e
-[ -n "$DEBUG" ] && set -x
+[ -n "${DEBUG}" ] && set -x
 
+readonly mydir=$PWD
 readonly workspace="./workspace"
 readonly dist="./dist"
 
@@ -32,21 +33,22 @@ if [ ! -e "${image_file}" ] || [ ! -e "${image_file_xz}" ]; then
 fi
 
 # only download the md5sum file if it doesn't exist.
-if [ ! -e "${image_file}.md5sum" ]; then
+if [ ! -e "${image_file_xz}.md5sum" ]; then
     curl -Ss -O "${md5sum_url}"
 fi
 
 # The md5 and extract is only valid when the first time running the script.
 if [ -e "${image_file_xz}" ]; then
     md5sum --check "${image_file_xz}.md5sum"
-    xz -d ${image_file_xz}
+    if [ ! -e "${image_file}" ]; then
+        xz --decompress --keep ${image_file_xz}
+    fi
 fi
 
-# At this point, the compressed file no longer exists
-
 # Expand the file size.  This happens to make the last partition of the image larger.
+# 2781872128 is the size of the file after expansion, figured out manually.
 readonly image_file_size=$(wc -c ${image_file} | cut -f 1 -d ' ')
-if [ "$image_file_size" -lt 2147483648 ]; then
+if [ "${image_file_size}" -lt 2781872128 ]; then
     # yes, you can grow file size with truncate.
     truncate --size=+1G ${image_file}
 fi
@@ -54,14 +56,15 @@ fi
 # Expand the the file system to fill the expanded disk size.
 #
 # ... do the expansion below.  This gets into messy town.
+"${mydir}"/resize_filesystem.sh ${image_file} 2
 
 # get out of ./workspace
 cd .. || exit 1
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?
-if [ -n "$DEBUG" ]; then
-    cp "${workspace}/${image_file}" "${dist}/${output_file}"
-else
-    mv "${workspace}/${image_file}" "${dist}/${output_file}"
-fi
+#if [ -n "$DEBUG" ]; then
+#    cp "${workspace}/${image_file}" "${dist}/${output_file}"
+#else
+#    mv "${workspace}/${image_file}" "${dist}/${output_file}"
+#fi

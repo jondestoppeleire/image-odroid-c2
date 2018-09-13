@@ -13,16 +13,16 @@ usage() {
     echo "Example:"
     echo "    ./mk_build_env.sh ubuntu-xenial"
     echo
+    exit 1
 }
 
 if [ -z "$distro" ]; then
     usage
-    exit 1
 fi
 
 if [ ! -d "$build_dir" ]; then
     echo "Dockerfile for distro '$distro' does not exist in dockerfiles/"
-    exit 1
+    usage
 fi
 
 docker build -t eatsa-odroid-c2-rootfs:build-env-"$distro" "$build_dir" || exit 1
