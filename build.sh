@@ -15,8 +15,6 @@ readonly dist="./dist"
 mkdir -p "${workspace}"
 mkdir -p "${dist}"
 
-pushd "${workspace}"
-
 # Use a base working ubuntu image for the odroid-c2
 # Saved a copy of the image from https://odroid.in/ubuntu_16.04lts/ to S3.
 readonly image_file="ubuntu64-16.04.3-minimal-odroid-c2-20171005.img"
@@ -28,32 +26,32 @@ readonly output_file="eatsa-ubuntu64-16.04.3-odroid-c2.img"
 # only download the image if it doesn't exist.
 # We may already have uncompressed the image file if this is not the first
 # run of the script.
-if [ ! -e "${image_file}" ] || [ ! -e "${image_file_xz}" ]; then
-    curl -Ss -O "${image_url}"
+if [ ! -e "${workspace}/${image_file}" ] || [ ! -e "${workspace}/${image_file_xz}" ]; then
+    # -L follow redirects, S show errors, s - silent
+    curl -LSs -o "${workspace}/${image_file_xz}" "${image_url}"
 fi
 
 # only download the md5sum file if it doesn't exist.
-if [ ! -e "${image_file_xz}.md5sum" ]; then
-    curl -Ss -O "${md5sum_url}"
+if [ ! -e "${workspace}/${image_file_xz}.md5sum" ]; then
+    curl -LSs -o "${workspace}/${image_file_xz}.md5sum" "${md5sum_url}"
 fi
 
 # The md5 and extract is only valid when the first time running the script.
-if [ -e "${image_file_xz}" ]; then
+if [ -e "${workspace}/${image_file_xz}" ]; then
+    pushd "${workspace}"
     md5sum --check "${image_file_xz}.md5sum"
-    if [ ! -e "${image_file}" ]; then
-        xz --decompress --keep ${image_file_xz}
+    popd
+    if [ ! -e "${workspace}/${image_file}" ]; then
+        xz --decompress --keep "${workspace}/${image_file_xz}"
     fi
 fi
 
 # Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
-"${mydir}"/resize.sh "${image_file}" 2
+./resize.sh "${workspace}/${image_file}" 2
 
 # chroot and install software
-"${mydir}"/install_software.sh "${image_file}"
-
-# get out of ./workspace
-popd
+./install_software.sh "${workspace}/${image_file}"
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?

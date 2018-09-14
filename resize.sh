@@ -11,6 +11,8 @@
 #   - grep
 #   - losetup
 #   - parted
+#   - image_utils.sh - custom functions to handle loop devices and mounts.
+#
 
 # Enable errexit option (exit script on error of any command)
 set -e
@@ -55,32 +57,18 @@ if [ "${image_file_size}" -lt 2781872128 ]; then
     truncate --size=+1G "${image_file}"
 fi
 
+# get utility functions
+# shellcheck source=./image_utils.sh
+. ./image_utils.sh
+
+#####
 # Expand the file system.
+#####
 
 # find first available loop device.
 loop_device=$(losetup -f)
 
-# Define a cleanup in case the script errs out.
-cleanup() {
-    [ -n "${DEBUG}" ] && echo "cleanup called."
-
-    # Find all loop devices assocated with the file
-    # Use the first field in the output (cut)
-    # Replace the last character ("/dev/loop0:") with nothing (sed)
-    # disassociate all the devices
-    active_devices=$(losetup -j "${image_file}" | cut -d' ' -f1 | sed 's/.$//')
-    for active_device in $active_devices; do
-        losetup -d "${active_device}"
-    done
-}
-# cleanup will run when the script exits or if user kills the script.
-trap cleanup EXIT SIGINT SIGQUIT
-
-# Attached the image file to the loop device.
-losetup "${loop_device}" "${image_file}"
-
-# tell the OS there's a new device and partitions.
-partprobe "${loop_device}"
+with_loop_device "${loop_device}" "${image_file}"
 
 # Expand partition $partition_number to the rest of the file.
 parted "${loop_device}" -s -- resizepart "${partition_number}" 100%

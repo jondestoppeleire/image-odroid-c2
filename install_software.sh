@@ -39,29 +39,22 @@ cleanup() {
     mountpoint -q "${boot_partition_mount}" && umount "${boot_partition_mount}"
     mountpoint -q "${rootfs_dir}" && umount "${rootfs_dir}"
     sync
-
-    # Find all loop devices assocated with the file
-    # Use the first field in the output (cut)
-    # Replace the last character ("/dev/loop0:") with nothing (sed)
-    # disassociate all the devices
-    active_devices=$(losetup -j "${image_file}" | cut -d' ' -f1 | sed 's/.$//')
-    for active_device in $active_devices; do
-        losetup -d "${active_device}"
-    done
 }
-# cleanup will run when the script exits or if user kills the script.
-trap cleanup EXIT SIGINT SIGQUIT
+
+# import
+# shellcheck source=./image_utils.sh
+. ./image_utils.sh
 
 # Mount the image's partitions and write to them.
 
 # find first available loop device.
 loop_device=$(losetup -f)
 
-# Attached the image file to the loop device.
-losetup "${loop_device}" "${image_file}"
+# use image_utils.sh function that has auto cleanup
+with_loop_device "${loop_device}" "${image_file}"
 
-# tell the OS there's a new device and partitions.
-partprobe "${loop_device}"
+# register the cleanup function defined above with image_utils.sh
+register_cleanup cleanup
 
 # Create mount points
 mkdir -p "${boot_partition_mount}"
