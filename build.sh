@@ -8,6 +8,9 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
+# GLOBALS
+export EATSAPASS="eatsa"
+
 readonly mydir="$PWD"
 readonly workspace="./workspace"
 readonly dist="./dist"
@@ -51,7 +54,7 @@ fi
 ./resize.sh "${workspace}/${image_file}" 2
 
 # chroot and install software
-./install_software.sh "${workspace}/${image_file}"
+./install_software.sh "${workspace}/${image_file}" "${workspace}"
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?

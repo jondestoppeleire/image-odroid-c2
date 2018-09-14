@@ -58,7 +58,6 @@ if [ "${image_file_size}" -lt 2781872128 ]; then
 fi
 
 # get utility functions
-# shellcheck source=./image_utils.sh
 . ./image_utils.sh
 
 #####

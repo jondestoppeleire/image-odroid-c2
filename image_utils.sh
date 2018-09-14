@@ -40,9 +40,14 @@ run_cleanup() {
             printf '%s\n' "${cleanup_functions[@]}"
         fi
     done
+    # delete the cleanup functions so they're not run again.
     unset cleanup_functions
+    cleanup_functions=()
     set +e
 }
+
+# Automagically execute run_cleanup on script exit or if user ctrl-c
+trap run_cleanup EXIT SIGINT SIGQUIT
 
 #####
 # Detaches all loop devices associated to the given file.
@@ -64,13 +69,15 @@ cleanup_loop_device() {
     active_devices=$(losetup -j "${image_file}" | cut -d' ' -f1 | sed 's/.$//')
     for active_device in $active_devices; do
         losetup -d "${active_device}"
-        echo "Successfully detachd ${active_device} from ${image_file}"
+        echo "Successfully detached ${active_device} from ${image_file}"
     done
     return 0
 }
 
 #####
-# Executes the functions in cleanup_functions in reverse order.
+# Attaches a file to a loop device and registers a cleanup function that runs
+# when the calling script exists or is interrupted.
+#
 # Globals:
 #   None
 # Arguments:
@@ -105,5 +112,122 @@ with_loop_device() {
     partprobe "${loop_device}"
 }
 
-# Automagically execute run_cleanup on script exit or if user ctrl-c
-trap run_cleanup EXIT SIGINT SIGQUIT
+#####
+# Unmounts a mount point.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - the mount point
+# Returns:
+#   None
+#####
+cleanup_mount() {
+    local mount_point="$1"
+    mountpoint -q "${mount_point}" && umount "${mount_point}"
+    sync
+}
+
+#####
+# Helper function to create mount dirs and clean up when done.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - device to mount
+#   $2 - the mount point
+# Returns:
+#   None
+#####
+with_mount() {
+    local device="$1"
+    local mount_point="$2"
+
+    mkdir -p "${mount_point}"
+
+    # no need to check device, as mount will barf on invalid params.
+    mount "${device}" "${mount_point}"
+
+    register_cleanup "cleanup_mount ${mount_point}"
+}
+
+
+#####
+# Clean up mounts in a chroot.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - chroot directory
+#   $2 - mount point
+# Returns:
+#   None
+#####
+cleanup_chroot_mount() {
+    local chroot_dir="$1"
+    local mount_point="$2"
+
+    chroot "${chroot_dir}" umount "${mount_point}"
+}
+
+#####
+# Helper function to create mount inside a chroot and clean up when done.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - chroot directory
+#   $2 - mount type
+#   $3 - mount point
+# Returns:
+#   None
+#####
+with_chroot_mount() {
+    local chroot_dir="$1"
+    local mount_type="$2"
+    local mount_point="$3"
+
+    chroot "${chroot_dir}" mount none -t "${mount_type}" "${mount_point}"
+
+    register_cleanup "cleanup_chroot_mount ${chroot_dir} ${mount_point}"
+}
+
+#####
+# Deletes the /usr/sbin/policy-rc.d file.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - chroot directory
+# Returns:
+#   None
+#####
+readonly policy_rc_file="/usr/sbin/policy-rc.d"
+cleanup_temp_disable_invoke_rc_d() {
+    local chroot_dir="$1"
+    chroot "${chroot_dir}" rm -f "${policy_rc_file}"
+    echo "Removed ${chroot_dir}${policy_rc_file}"
+}
+
+#####
+# Write a non-zero exit to policy-rc in the chroot to disable services from
+# starting.  Registers a cleanup function to delete the file when done.
+#
+# Globals:
+#   None
+# Arguments:
+#   $1 - chroot directory
+# Returns:
+#   None
+#####
+temp_disable_invoke_rc_d() {
+    local chroot_dir="$1"
+    chroot "${chroot_dir}" tee "${policy_rc_file}" > /dev/null << _EOF
+#!/bin/sh
+exit 101
+_EOF
+    chmod a+x "${chroot_dir}${policy_rc_file}"
+    echo "Wrote to ${chroot_dir}${policy_rc_file}"
+
+    register_cleanup "cleanup_temp_disable_invoke_rc_d ${chroot_dir}"
+}

@@ -17,3 +17,7 @@ docker_image:
 .PHONY: build
 build: docker_image
 	DEBUG=1 ./run_build_env.sh ubuntu-xenial
+
+.PHONY: shell
+shell: shellcheck
+	./run_build_env.sh ubuntu-xenial /bin/bash
