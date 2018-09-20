@@ -79,8 +79,9 @@ with_chroot_mount "${rootfs_dir}" devpts /dev/pts
 temp_disable_invoke_rc_d "${rootfs_dir}"
 
 # chroot and install software
-./install_software.sh "${rootfs_dir}"
-./install_eatsa.sh "${rootfs_dir}"
+./install_apt_update.sh "${rootfs_dir}"
+./install_base_system.sh "${rootfs_dir}"
+./install_eatsa_user.sh "${rootfs_dir}"
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?

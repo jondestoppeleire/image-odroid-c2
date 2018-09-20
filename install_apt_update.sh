@@ -9,7 +9,7 @@ set -e
 
 usage() {
     echo "Install software for the odroid-c2 for eatsa's uses."
-    echo "Assumes that a rootfs already exists."
+    echo "Assumes that a rootfs already exists and mounts are setup."
     echo
     echo "Usage: $0 rootfs_dir"
     echo
@@ -20,8 +20,8 @@ usage() {
 
 rootfs_dir="$1"
 if [ ! -d "${rootfs_dir}" ]; then
-    echo "Workspace directory ${rootfs_dir} does not exist!"
-    exit 1
+    echo "The specified chroot directory ${rootfs_dir} does not exist!"
+    usage
 fi
 
 # Add a (the Google) nameserver for apt-get to work
@@ -59,6 +59,3 @@ packages=(
 
 chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"
 chroot "${rootfs_dir}" apt-get install -y ca-certificates --only-upgrade
-
-# cleanup invoked.
-exit

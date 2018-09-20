@@ -74,6 +74,11 @@ get_active_loop_devices() {
 #####
 cleanup_loop_device() {
     local img_file="$1"
+    if [ -z "${img_file}" ]; then
+        echo "Usage: $0 img_file"
+        return 1
+    fi
+
     [ -n "${DEBUG}" ] && echo "cleanup_loop_device ${img_file}."
 
     # Find all loop devices assocated with the file
