@@ -50,6 +50,20 @@ run_cleanup() {
 trap run_cleanup EXIT SIGINT SIGQUIT
 
 #####
+# Lists active loop devices in use associated with given file.
+# Globals:
+#   None
+# Arguments:
+#   $1 - the file to assocate to the loop device.
+# Returns:
+#   Exit code - 0 if successful, a larger value otherwise.
+#####
+get_active_loop_devices() {
+    local img_file="$1"
+    losetup -j "${img_file}" | cut -d' ' -f1 | sed 's/.$//'
+}
+
+#####
 # Detaches all loop devices associated to the given file.
 # Globals:
 #   None
@@ -59,17 +73,17 @@ trap run_cleanup EXIT SIGINT SIGQUIT
 #   Exit code - 0 if successful, a larger value otherwise.
 #####
 cleanup_loop_device() {
-    local image_file="$1"
-    [ -n "${DEBUG}" ] && echo "cleanup_loop_device ${image_file}."
+    local img_file="$1"
+    [ -n "${DEBUG}" ] && echo "cleanup_loop_device ${img_file}."
 
     # Find all loop devices assocated with the file
     # Use the first field in the output (cut)
     # Replace the last character ("/dev/loop0:") with nothing (sed)
     # disassociate all the devices
-    active_devices=$(losetup -j "${image_file}" | cut -d' ' -f1 | sed 's/.$//')
+    active_devices=$(get_active_loop_devices "${img_file}")
     for active_device in $active_devices; do
         losetup -d "${active_device}"
-        echo "Successfully detached ${active_device} from ${image_file}"
+        echo "Successfully detached ${active_device} from ${img_file}"
     done
     return 0
 }
@@ -88,7 +102,7 @@ cleanup_loop_device() {
 #####
 with_loop_device() {
     local loop_device="$1"
-    local image_file="$2"
+    local img_file="$2"
 
     # Do our best to make sure loop device is free.
     if [ "${loop_device}" != "$(losetup -f)" ]; then
@@ -96,17 +110,17 @@ with_loop_device() {
         return 1
     fi
 
-    if [ ! -e "${image_file}" ]; then
-        echo "Image file ${image_file} does not exist."
+    if [ ! -e "${img_file}" ]; then
+        echo "Image file ${img_file} does not exist."
         return 1
     fi
 
     # register the cleanup routine
     # Do this first in case losetup succeeds but partprobe fails.
-    register_cleanup "cleanup_loop_device ${image_file}"
+    register_cleanup "cleanup_loop_device ${img_file}"
 
     # Attached the image file to the loop device.
-    losetup "${loop_device}" "${image_file}"
+    losetup "${loop_device}" "${img_file}"
 
     # tell the OS there's a new device and partitions.
     partprobe "${loop_device}"

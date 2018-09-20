@@ -9,54 +9,20 @@ set -e
 
 usage() {
     echo "Install software for the odroid-c2 for eatsa's uses."
+    echo "Assumes that a rootfs already exists."
     echo
-    echo "Usage: $0 image_file workspace"
+    echo "Usage: $0 rootfs_dir"
     echo
-    echo "  image_file - an image containing disk partitions."
-    echo "  workspace  - the directory to do rootfs work"
+    echo "  rootfs_dir - a directory to chroot into"
     echo
     exit 1
 }
 
-image_file="$1"
-if [ ! -e "${image_file}" ]; then
-    echo "image_file '${image_file}' not found."
-    usage
-fi
-
-workspace="$2"
-if [ -z "${workspace}" ]; then
-    workspace="$PWD"
-fi
-
-if [ ! -d "${workspace}" ]; then
-    echo "Workspace directory ${workspace} does not exist!"
+rootfs_dir="$1"
+if [ ! -d "${rootfs_dir}" ]; then
+    echo "Workspace directory ${rootfs_dir} does not exist!"
     exit 1
 fi
-
-# Define globals common throughout this script.
-readonly rootfs_dir="${workspace}/rootfs"
-readonly boot_partition_mount="${rootfs_dir}/media/boot"
-
-# import
-. ./image_utils.sh
-
-# Mount the image's partitions and write to them.
-
-# find first available loop device.
-loop_device=$(losetup -f)
-
-# use image_utils.sh functions that has auto cleanup
-with_loop_device "${loop_device}" "${image_file}"
-
-with_mount "${loop_device}p2" "${rootfs_dir}"
-with_mount "${loop_device}p1" "${boot_partition_mount}"
-
-with_chroot_mount "${rootfs_dir}" proc /proc
-with_chroot_mount "${rootfs_dir}" sysfs /sys
-with_chroot_mount "${rootfs_dir}" devpts /dev/pts
-
-temp_disable_invoke_rc_d "${rootfs_dir}"
 
 # Add a (the Google) nameserver for apt-get to work
 echo "nameserver 8.8.8.8" | chroot "${rootfs_dir}" tee /etc/resolv.conf
@@ -94,6 +60,5 @@ packages=(
 chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"
 chroot "${rootfs_dir}" apt-get install -y ca-certificates --only-upgrade
 
-./install_eatsa.sh "${rootfs_dir}"
 # cleanup invoked.
 exit
