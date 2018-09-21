@@ -84,6 +84,7 @@ Or
 To Debug
 
     $ ./run_build_env.sh ubuntu-xenial /bin/bash
+    # alternatively `make shell`
 
 The containers are set to be deleted when the shell exists, so any work done
 outside of mounted directories will be discarded.

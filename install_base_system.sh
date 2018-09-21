@@ -40,5 +40,17 @@ chroot "${rootfs_dir}" ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime
 
 # Use one server key across all display-client devices.
 # Set ssh server permissions
-chroot "${rootfs_dir}" chmod 600 /etc/ssh/ssh*key
-chroot "${rootfs_dir}" chmod 644 /etc/ssh/ssh*key.pub
+# oddly the easy glob commands don't seem to work.
+sudo chmod 600 "${rootfs_dir}"/etc/ssh/ssh*key
+
+#for privkey in ./base-files/base-system/etc/ssh/*key; do
+#    sudo chmod 600 "${rootfs_dir}/etc/ssh/${privkey}"
+#done
+#for pubkey in ./base-files/base-system/etc/ssh/*.pub; do
+#    sudo chmod 644 "${rootfs_dir}/etc/ssh/${pubkey}"
+#done
+
+# Disable unwanted and resource intensive jobs
+chroot "${rootfs_dir}" systemctl mask apt-daily-upgrade.timer
+chroot "${rootfs_dir}" systemctl mask apt-daily.timer
+chroot "${rootfs_dir}" systemctl mask unattended-upgrades.service

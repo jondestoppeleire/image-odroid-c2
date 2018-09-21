@@ -41,7 +41,13 @@ echo "eatsa:$EATSAPASS" | chroot "${rootfs_dir}" chpasswd
 # copy all base files over
 cp -Rv base-files/eatsa-user/* "${rootfs_dir}/"
 
-# Add eatsa to the video group in order to access /dev/fb0 for graphics.
-chroot "${rootfs_dir}" usermod -a -G video eatsa
+# Add eatsa to groups for hardware acceleration. Unsure if complete list.
+# https://wiki.odroid.com/odroid-c2/troubleshooting/kodi_hw_acceleration
+chroot "${rootfs_dir}" usermod -a -G audio,video,users,plugdev,netdev eatsa
 
+chroot "${rootfs_dir}" mkdir -p /home/eatsa/chromium
 chroot "${rootfs_dir}" chown -R eatsa:eatsa /home/eatsa
+
+# autologin configuration, see the file:
+# base-files/eatsa-user/etc/systemd/system/getty@tty1.service.d/autologin.conf
+chroot "${rootfs_dir}" systemctl enable getty@tty1.service

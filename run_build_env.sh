@@ -41,6 +41,7 @@ if [ "${os_name}" = "Darwin" ]; then
      -v "${HOME}":"${HOME}" \
      -v "${PWD}":"${PWD}" -w "${PWD}" \
      -v /dev:/dev \
+     -e "DEBUG=${DEBUG}" \
      eatsa-odroid-c2-rootfs:build-env-"${distro}" \
      "${container_command}"
 else
@@ -52,6 +53,7 @@ else
      -v "${PWD}":"${PWD}" -w "${PWD}" \
      -v /dev:/dev \
      -v /run/udev:/run/udev:ro \
+     -e "DEBUG=${DEBUG}" \
      eatsa-odroid-c2-rootfs:build-env-"${distro}" \
      "${container_command}"
 fi

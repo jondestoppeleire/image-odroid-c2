@@ -10,6 +10,7 @@ set -e
 
 # GLOBALS
 export EATSAPASS="eatsa"
+# secret variable SKIP_APT_UPDATE to speed up development.
 
 readonly mydir="$PWD"
 readonly workspace="./workspace"
@@ -69,6 +70,7 @@ with_loop_device "${loop_device}" "${work_image}"
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
 
+# image_utils.sh - mounts the partitions and auto umount when script exits.
 with_mount "${loop_device}p2" "${rootfs_dir}"
 with_mount "${loop_device}p1" "${boot_partition_mount}"
 
@@ -79,9 +81,42 @@ with_chroot_mount "${rootfs_dir}" devpts /dev/pts
 temp_disable_invoke_rc_d "${rootfs_dir}"
 
 # chroot and install software
-./install_apt_update.sh "${rootfs_dir}"
+[ -z "${SKIP_APT_UPDATE}" ] && ./install_apt_update.sh "${rootfs_dir}"
 ./install_base_system.sh "${rootfs_dir}"
 ./install_eatsa_user.sh "${rootfs_dir}"
+
+# call boot customizations last
+./install_boot_customizations.sh "${rootfs_dir}"
+
+# Generate new initrd to capture changes from everything above.
+# Remove unused kernels
+readonly removable_kernels=$(chroot "${rootfs_dir}" dpkg -l linux-image-\* | grep ^rc | awk '{ print $2 }')
+if [ -n "${removable_kernels}" ]; then
+    echo "${removable_kernels[@]}" | xargs chroot "${rootfs_dir}" dpkg --purge
+fi
+
+# Find the kernel version that's installed
+# bash-fu breakdown:
+#   $ dpkg --get-selections | grep "linux-image-[[:digit]].*"
+#   linux-image-3.14.79-116				install
+readonly installed_kernel_package=$(chroot "${rootfs_dir}" dpkg --get-selections | grep "linux-image-[[:digit:]].*")
+
+# Get the first column and remove the "linux-image-" prefix
+readonly kernel_version=$(echo "${installed_kernel_package}" | awk '{ print $1 }' | sed 's/linux-image-//')
+
+# delete old version if it exists
+rm -f "${rootfs_dir}/boot/uInitrd-${kernel_version}"
+
+# register update-initramfs -u so that it's only run once.
+chroot "${rootfs_dir}" update-initramfs -u
+
+# create the uInitrd, U-boot
+chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n initramfs \
+    -d "/boot/initrd.img-${kernel_version}" "/boot/uInitrd-${kernel_version}"
+
+# move newly built initrd's to boot partition
+rm -f "${boot_partition_mount}/uInitrd"
+cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
 
 # Finally, move final product to dist.  Copy if $DEBUG is set.
 # Bump version number as well?
