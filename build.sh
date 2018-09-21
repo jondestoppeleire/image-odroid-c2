@@ -32,7 +32,7 @@ readonly work_image="${workspace}/${image_file}"
 # only download the image if it doesn't exist.
 # We may already have uncompressed the image file if this is not the first
 # run of the script.
-if [ ! -e "${work_image}" ] || [ ! -e "${work_image_xz}" ]; then
+if [ ! -e "${work_image_xz}" ]; then
     # -L follow redirects, S show errors, s - silent
     curl -LSs -o "${work_image_xz}" "${image_url}"
 fi
@@ -52,6 +52,12 @@ if [ -e "${work_image_xz}" ]; then
     fi
 fi
 
+# Grow the disk image file.
+# Expand the the file system to fill the expanded disk size.
+# Note: ./resize.sh doesn't seem to work if the loop device is setup outside
+# of the script...
+./resize.sh "${work_image}" 2
+
 # import
 . ./image_utils.sh
 
@@ -62,10 +68,6 @@ loop_device=$(losetup -f)
 
 # use image_utils.sh functions that has auto cleanup
 with_loop_device "${loop_device}" "${work_image}"
-
-# Grow the disk image file.
-# Expand the the file system to fill the expanded disk size.
-./resize.sh "${work_image}" 2 "${loop_device}"
 
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
