@@ -29,4 +29,7 @@ fi
 cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
 
 readonly plymouth_themes="/usr/share/plymouth/themes"
-chroot "${rootfs_dir}" update-alternatives --install "${plymouth_themes}/default.plymouth" default.plymouth "${plymouth_themes}/eatsa-logo/eatsa-logo.plymouth" 100
+chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.plymouth /etc/alternatives/default.plymouth
+
+# not sure if this is used since we're using uboot but not grub
+chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.grub /etc/alternatives/default.plymouth.grub

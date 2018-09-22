@@ -18,5 +18,7 @@ fi
 
 # set PATH so it includes user's private bin directories
 PATH="$HOME/bin:$HOME/.local/bin:$PATH"
-export XAUTHORITY=/tmp/Xauthority
+# Don't set Xauthority file in case we have no permissions to it!
+# Wrong permissions to this file causes a TON of trouble.
+#export XAUTHORITY=/tmp/Xauthority
 export DISPLAY=:0

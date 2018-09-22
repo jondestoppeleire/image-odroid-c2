@@ -55,6 +55,7 @@ packages=(
     ifplugd
     nginx-core
     plymouth-theme-ubuntu-logo
+    xserver-xorg-video-mali
 )
 
 chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"
