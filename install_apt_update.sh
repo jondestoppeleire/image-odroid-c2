@@ -35,27 +35,33 @@ chroot "${rootfs_dir}" apt-get update
 # different builds for the odroid-c2 are needed.
 # Packages to install later are things like chromium-browser.
 packages=(
-    ubuntu-standard
-    language-pack-en
-    xorg
-    chromium-browser
+    # tools for building/configureing os
     u-boot-tools
+    squashfs-tools
+    xdotool
+    # firmware stuff
     linux-firmware
     wpasupplicant
-    squashfs-tools
-    openbox
-    unclutter
-    xdotool
+    xserver-xorg-video-mali
+    acpid
+    ifplugd
+    # OS tools
+    wget
     socat
-    imagemagick
     openssh-server
     openntpd
     supervisor
-    acpid
-    ifplugd
-    nginx-core
+    watchdog
+    # Display / userland stuff
+    ubuntu-standard
     plymouth-theme-ubuntu-logo
-    xserver-xorg-video-mali
+    language-pack-en
+    xorg
+    chromium-browser
+    openbox
+    unclutter
+    imagemagick
+    nginx-core
 )
 
 chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"

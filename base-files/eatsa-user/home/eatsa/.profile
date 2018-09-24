@@ -22,3 +22,6 @@ PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 # Wrong permissions to this file causes a TON of trouble.
 #export XAUTHORITY=/tmp/Xauthority
 export DISPLAY=:0
+
+# Call supervisor to call startx.
+# sudo supervisorctl start wise-display

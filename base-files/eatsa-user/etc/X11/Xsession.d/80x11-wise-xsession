@@ -5,9 +5,12 @@
 /usr/bin/xset s off
 /usr/bin/xsetroot -solid white
 
-chromium_platform="-use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-canvas --enable-gpu-rasterization --enable-gpu-memory-buffer-video-frames --enable-zero-copy-dxgi-video --video-threads=4"
+# hide the pointer afte 1sec
+/usr/bin/unclutter -idle 1 -root &
+
+chromium_platform="--use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-canvas --enable-gpu-rasterization --enable-gpu-memory-buffer-video-frames --enable-zero-copy-dxgi-video --video-threads=4"
 cache_dir=/home/eatsa/chromium
-chromium_opts="--allow-running-insecure-content --no-first-run --user-data-dir=$cache_dir"
+chromium_opts="--incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=$cache_dir"
 
 if mount -r -L EATSACONF /mnt; then
     [ -r /mnt/config.txt ] && . /mnt/config.txt
@@ -44,11 +47,14 @@ if [ -n "$WISE_TZ" ]; then
     export TZ=$WISE_TZ
 fi
 
+
+
 # this loop also prevents any further xsession scripts from running
-rm -rf $cache_dir
-nice -n -20 /usr/bin/chromium-browser \
-    "$chromium_opts" \
-    "$chromium_mode" \
-    "$chromium_platform" \
-    "$WISE_OPTS" \
-    "$WISE_URL"
+while true; do
+    nice -n -20 /usr/bin/chromium-browser \
+        "$chromium_opts" \
+        "$chromium_mode" \
+        "$chromium_platform" \
+        "$WISE_OPTS" \
+        "$WISE_URL"
+done

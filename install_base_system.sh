@@ -54,3 +54,14 @@ sudo chmod 600 "${rootfs_dir}"/etc/ssh/ssh*key
 chroot "${rootfs_dir}" systemctl mask apt-daily-upgrade.timer
 chroot "${rootfs_dir}" systemctl mask apt-daily.timer
 chroot "${rootfs_dir}" systemctl mask unattended-upgrades.service
+
+chroot "${rootfs_dir}" systemctl enable supervisor
+chroot "${rootfs_dir}" systemctl enable acpid
+
+# We use supervisor to manage nginx.
+chroot "${rootfs_dir}" systemctl mask nginx.service
+
+# Remove default nginx files
+chroot "${rootfs_dir}" rm -f /var/www/html/index.html
+# TODO - link version.txt so it can be checked via standard http
+# chroot "${rootfs_dir}" ln -fs /version.txt /var/www/html/version.txt
