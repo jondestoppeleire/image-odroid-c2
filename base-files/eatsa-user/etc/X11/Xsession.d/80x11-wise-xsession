@@ -19,9 +19,9 @@ chromium_opts="--incognito --allow-running-insecure-content --no-first-run --aut
 
 # The file is called netboot-if.conf, but it is used regardless of netboot-ing.
 if . /etc/netboot-if.conf; then
-    number="$(echo $IPV4ADDR | cut -d. -f4)"
-    eth_mac_full="$(cat /sys/class/net/$DEVICE/address)"
-    eth_mac="$(echo $eth_mac_full | sed 's/://g')"
+    number=$(echo "$IPV4ADDR" | cut -d. -f4)
+    eth_mac_full=$(cat "/sys/class/net/$DEVICE/address")
+    eth_mac=$(echo "$eth_mac_full" | sed 's/://g')
 fi
 
 if mount -r -L EATSACONF /mnt; then
