@@ -3,18 +3,56 @@
 # turn off power savings, set the background to black
 /usr/bin/xset -dpms
 /usr/bin/xset s off
-/usr/bin/xsetroot -solid white
+
+# The comment above says to set the background to black, but the line below,
+# before the most recent change, said '... -solid white'.  Not sure if there
+# was some inverse color issue when displaying on a cubby or other device.
+/usr/bin/xsetroot -solid black
 
 # hide the pointer afte 1sec
 /usr/bin/unclutter -idle 1 -root &
 
+# removed if-statments for other platforms as this is specific for odroid-c2 smartshelf.
 chromium_platform="--use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-canvas --enable-gpu-rasterization --enable-gpu-memory-buffer-video-frames --enable-zero-copy-dxgi-video --video-threads=4"
 cache_dir=/home/eatsa/chromium
 chromium_opts="--incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=$cache_dir"
 
+if [ -e "/etc/netboot-if.conf" ]; then
+    ./etc/netboot-if.conf
+    number="$(echo $IPV4ADDR | cut -d. -f4)"
+    eth_mac_full="$(cat /sys/class/net/$DEVICE/address)"
+    eth_mac="$(echo $eth_mac_full | sed 's/://g')"
+fi
+
 if mount -r -L EATSACONF /mnt; then
     [ -r /mnt/config.txt ] && . /mnt/config.txt
     umount /mnt
+fi
+
+if [ -n "$WISE_URL" ]; then
+    # do nothing, use WISE_URL
+    true
+elif [ -n "$WISE_ROLE" -a -n "$WISE_ID" ]; then
+    # we have a config.txt, use it
+    # the host storemanager is configured in /etc/hosts, no need to calculate it
+    WISE_URL=http://storemanager:3000/$WISE_ROLE/$WISE_ID
+elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 -o "$number" -gt 230 ]; then
+   if [ -z "$number" ]; then
+       # we have no network connection
+       cubby="$eth_mac"
+   else
+       # we have an IP address but it's not a cubby address
+       cubby="$IPV4ADDR $eth_mac_full"
+   fi
+   sed -e "s,%%TEXT%%,$cubby," /etc/X11/address.html > /tmp/address.html
+   WISE_URL="file:///tmp/address.html"
+elif [ "$number" -gt 200 -a "$number" -lt 231 ]; then
+   # we have a proper IP address
+   WISE_URL=http://storemanager:3000/cubby/$((number-200))
+else
+    # unknown state
+    [ -z "$eth_mac" ] && eth_mac=unknown
+    WISE_URL="http://storemanager:3000/mac/$eth_mac"
 fi
 
 # force the output framerate to 30fps, but fail gracefully if not supported
@@ -46,8 +84,6 @@ fi
 if [ -n "$WISE_TZ" ]; then
     export TZ=$WISE_TZ
 fi
-
-
 
 # this loop also prevents any further xsession scripts from running
 while true; do

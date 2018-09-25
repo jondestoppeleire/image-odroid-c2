@@ -52,6 +52,10 @@ if [ -e "${work_image_xz}" ]; then
     fi
 fi
 
+# Download required software before doing time expensive operations.
+# Remove this to make this project more generic.
+./download_smartshelf_software.sh "${workspace}"
+
 # Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
 # Note: ./resize.sh doesn't seem to work if the loop device is setup outside
@@ -89,6 +93,9 @@ temp_disable_invoke_rc_d "${rootfs_dir}"
 
 # call boot customizations last
 ./install_boot_customizations.sh "${rootfs_dir}"
+
+# Install smartshelf software
+./install_smartshelf_software.sh "${workspace}" "${rootfs_dir}"
 
 # Generate new initrd to capture changes from everything above.
 # Remove unused kernels

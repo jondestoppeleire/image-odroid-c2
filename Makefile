@@ -22,3 +22,11 @@ build: docker_image
 .PHONY: shell
 shell: shellcheck
 	./run_build_env.sh ubuntu-xenial /bin/bash
+
+# experimental
+.PHONY: docker_image_bionic
+docker_image_bionic:
+	./mk_build_env.sh ubuntu-bionic
+
+.PHONY: build_bionic
+	./run_build_env.sh ubuntu-bionic
