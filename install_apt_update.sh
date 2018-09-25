@@ -42,7 +42,6 @@ packages=(
     # firmware stuff
     linux-firmware
     wpasupplicant
-    xserver-xorg-video-mali
     acpid
     ifplugd
     # OS tools
@@ -63,6 +62,14 @@ packages=(
     imagemagick
     nginx-core
 )
+
+release_version=$(chroot "${rootfs_dir}" lsb_release -r -s)
+if [ "${release_version}" = "18.04" ]; then
+    packages+=(mali-x11)
+else
+    # This is good for 16.04, not sure above versions above 18.04.
+    packages+=(xserver-xorg-video-mali)
+fi
 
 chroot "${rootfs_dir}" apt-get install -y --no-install-recommends "${packages[@]}"
 chroot "${rootfs_dir}" apt-get install -y ca-certificates --only-upgrade

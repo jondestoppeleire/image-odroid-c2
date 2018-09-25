@@ -17,8 +17,8 @@ chromium_platform="--use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-
 cache_dir=/home/eatsa/chromium
 chromium_opts="--incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=$cache_dir"
 
-if [ -e "/etc/netboot-if.conf" ]; then
-    ./etc/netboot-if.conf
+# The file is called netboot-if.conf, but it is used regardless of netboot-ing.
+if . /etc/netboot-if.conf; then
     number="$(echo $IPV4ADDR | cut -d. -f4)"
     eth_mac_full="$(cat /sys/class/net/$DEVICE/address)"
     eth_mac="$(echo $eth_mac_full | sed 's/://g')"
