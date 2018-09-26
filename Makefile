@@ -11,8 +11,12 @@ shellcheck: docker_image
 	 eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial \
 	 /bin/bash -c "shellcheck $(SCRIPTS) && shellcheck -s sh $(CHECK_EM)"
 
+.PHONY: build_setup
+build_setup:
+	./build-scripts/build-setup.sh
+
 .PHONY: docker_image
-docker_image:
+docker_image: build_setup
 	./mk_build_env.sh ubuntu-xenial
 
 .PHONY: build
@@ -25,7 +29,7 @@ shell: shellcheck
 
 # experimental
 .PHONY: docker_image_bionic
-docker_image_bionic:
+docker_image_bionic: build_setup
 	./mk_build_env.sh ubuntu-bionic
 
 # Bionic build seems to hang with platform specific issue

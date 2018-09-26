@@ -5,7 +5,7 @@
 #
 # Note that this script does NOT use build-framework.
 
-if apt-get --version > /dev/null 2>&1; then
+if apt-get -h > /dev/null 2>&1; then
     sudo apt-get install -y squashfs-tools xorriso genisoimage \
      qemu-user-static parted dosfstools binfmt-support debootstrap xz-utils \
      shellcheck

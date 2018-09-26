@@ -64,6 +64,10 @@ fi
 # of the script...
 ./resize.sh "${work_image}" 2
 
+# Let everything in ./resize.sh finish???
+# this is a hack, shouldn't be necessary.
+sleep 1
+
 # import
 . ./image_utils.sh
 
