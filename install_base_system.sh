@@ -55,7 +55,10 @@ chroot "${rootfs_dir}" systemctl mask apt-daily-upgrade.timer
 chroot "${rootfs_dir}" systemctl mask apt-daily.timer
 chroot "${rootfs_dir}" systemctl mask unattended-upgrades.service
 
-chroot "${rootfs_dir}" systemctl enable supervisor
+# The old wise-display devices run everything as root and the software now,
+# such as chromium, does not support running as root without lots of banners
+# showing up on the display that are un-removable.
+#chroot "${rootfs_dir}" systemctl enable supervisor
 chroot "${rootfs_dir}" systemctl enable acpid
 
 # We use supervisor to manage nginx.

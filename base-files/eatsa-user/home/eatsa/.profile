@@ -23,5 +23,4 @@ PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 #export XAUTHORITY=/tmp/Xauthority
 export DISPLAY=:0
 
-# Call supervisor to call startx.
-# sudo supervisorctl start wise-display
+# run supervisor?  It doesn't seem to display the gui correctly, but X does start.
