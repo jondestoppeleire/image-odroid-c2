@@ -12,13 +12,9 @@
 # hide the pointer afte 1sec
 /usr/bin/unclutter -idle 1 -root &
 
-# removed if-statments for other platforms as this is specific for odroid-c2 smartshelf.
-chromium_platform="--use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-canvas --enable-gpu-rasterization --enable-gpu-memory-buffer-video-frames --enable-zero-copy-dxgi-video --video-threads=4"
-cache_dir=/home/eatsa/chromium
-chromium_opts="--incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=$cache_dir"
-
 # The file is called netboot-if.conf, but it is used regardless of netboot-ing.
-if . /etc/netboot-if.conf; then
+if [ -r /etc/netboot-if.conf ]; then
+    . /etc/netboot-if.conf
     number=$(echo "$IPV4ADDR" | cut -d. -f4)
     eth_mac_full=$(cat "/sys/class/net/$DEVICE/address")
     eth_mac=$(echo "$eth_mac_full" | sed 's/://g')
@@ -85,12 +81,19 @@ if [ -n "$WISE_TZ" ]; then
     export TZ=$WISE_TZ
 fi
 
+# removed if-statments for other platforms as this is specific for odroid-c2 smartshelf.
+#cache_dir=/home/eatsa/chromium
+#chromium_opts="--incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=$cache_dir"
+
+# the following flags should be tried individually - they usually crash chromium in incognito mode.
+# --disable-accelerated-2d-canvas is ok, not sure about the rest.
+#chromium_platform="--use-gl=egl --ignore-gpu-blacklist --disable-accelerated-2d-canvas --enable-gpu-rasterization --enable-gpu-memory-buffer-video-frames --enable-zero-copy-dxgi-video --video-threads=4"
+
 # this loop also prevents any further xsession scripts from running
+# NOTE: some odd reason, chromium does not like multi-line options and this script doesn't expand args correctly!
 while true; do
     nice -n -20 /usr/bin/chromium-browser \
-        "$chromium_opts" \
-        "$chromium_mode" \
-        "$chromium_platform" \
-        "$WISE_OPTS" \
+        --incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --video-threads=4 \
+        "${chromium_mode}" \
         "$WISE_URL"
 done

@@ -1,5 +1,7 @@
 SCRIPTS = $(shell find . -type f -name "*.sh" -not -path "./workspace/*" -not -path "./dist/*")
-CHECK_EM = base-files/eatsa-user/etc/X11/Xsession.d/80x11-wise-xsession
+SHELL_FILES = base-files/eatsa-user/etc/X11/Xsession.d/80x11-wise-xsession
+BASH_FILES = base-files/base-system/etc/network/if-up.d/wise-ifpreup-hostname \
+	base-files/base-system/etc/network/if-up.d/wise-ifup-hostname
 
 # depends on shellcheck 0.4.6+.  Will fail on 0.3.3.
 .PHONY: shellcheck
@@ -9,7 +11,7 @@ shellcheck: docker_image
 	 -v "$$HOME":"$$HOME" \
 	 -v "$$PWD":"$$PWD" -w "$$PWD" \
 	 eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial \
-	 /bin/bash -c "shellcheck $(SCRIPTS) && shellcheck -s sh $(CHECK_EM)"
+	 /bin/bash -c "shellcheck $(SCRIPTS) && shellcheck -s sh $(SHELL_FILES) && shellcheck -s bash $(BASH_FILES)"
 
 .PHONY: build_setup
 build_setup:

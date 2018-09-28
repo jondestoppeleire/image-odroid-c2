@@ -1,0 +1,54 @@
+#!/bin/bash
+
+[ "$IFACE" = lo ] && exit 0
+
+# this is save from the initial netboot dhcp request
+# create it if it does not exist so otehr scripts can use it
+# (it will always exist if we boot from wlan0)
+if [ -r /etc/netboot-if.conf ]; then
+    . /etc/netboot-if.conf
+fi
+if [ -z "$IPV4ADDR" ]; then
+    while [ -z "$IPV4ADDR" ]; do
+        # wait for dhcp to get an address if necessary
+        IPV4ADDR="$(ip addr show dev eth0 | grep "inet " | awk '{print $2}' | cut -d/ -f1)"
+        sleep 1
+    done
+    echo "IPV4ADDR=$IPV4ADDR" > /etc/netboot-if.conf
+    echo "DEVICE=eth0" >> /etc/netboot-if.conf
+fi
+
+number=$(echo "$IPV4ADDR" | cut -d. -f4)
+eth_mac=$(sed 's/://g' "/sys/class/net/$IFACE/address")
+
+if [ "$number" -gt 200 ] && [ "$number" -lt 231 ]; then
+    WISE_ROLE=cubby
+    WISE_ID=$((number - 200))
+elif [ "$number" -lt 201 ] || [ "$number" -gt 230 ]; then
+    WISE_ROLE=unconfigured
+    WISE_ID="$number"
+fi
+
+if mount -r -L EATSACONF /mnt; then
+    [[ -r /mnt/config.txt ]] && . /mnt/config.txt
+    umount /mnt
+fi
+
+if [ -n "$WISE_ROLE" ] && [ -n "$WISE_ID" ]; then
+    myname="wise-${WISE_ROLE}${WISE_ID}"
+else
+    myname="wise-${eth_mac}"
+fi
+
+network=$(echo "$IPV4ADDR" | cut -d. -f1-3)
+manager_addr=${network}.250
+[ -n "$WISE_SMIP" ] && manager_addr=$WISE_SMIP
+
+echo "# wise-ifup-hostname" > /etc/hosts
+echo "127.0.0.1 localhost $myname" >> /etc/hosts
+echo "$manager_addr storemanager" >> /etc/hosts
+echo "$myname" > /etc/hostname
+/bin/hostname "$myname"
+
+# we call this to force a time set on boot
+systemctl restart openntpd
