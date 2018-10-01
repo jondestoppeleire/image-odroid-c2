@@ -24,3 +24,6 @@ PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 export DISPLAY=:0
 
 # run supervisor?  It doesn't seem to display the gui correctly, but X does start.
+
+# this is the command that supervisor runs.  Our issue now is what happens when this process dies.
+exec /usr/bin/startx

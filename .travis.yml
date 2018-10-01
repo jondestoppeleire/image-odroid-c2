@@ -33,9 +33,9 @@ deploy:
   provider: s3
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY
-  bucket: eatsa-packages
+  bucket: eatsa-artifacts
   local-dir: pkg
-  upload-dir: image-odroid-c2
+  upload-dir: wise-display
   acl: private
   on:
     all_branches: true

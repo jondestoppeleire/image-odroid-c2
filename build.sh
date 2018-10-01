@@ -27,9 +27,10 @@ readonly image_file="ubuntu64-16.04.3-minimal-odroid-c2-20171005.img"
 readonly image_file_xz="${image_file}.xz"
 readonly image_url="https://s3.amazonaws.com/eatsa-artifacts/wise-display/${image_file_xz}"
 readonly md5sum_url="${image_url}.md5sum"
-readonly output_file="eatsa-ubuntu64-16.04.3-odroid-c2.img"
 readonly work_image_xz="${workspace}/${image_file_xz}"
 readonly work_image="${workspace}/${image_file}"
+readonly output_image_file="eatsa-smartshelf-odroid-c2.img"
+readonly work_output_image="${workspace}/${output_image_file}"
 
 # only download the image if it doesn't exist.
 # We may already have uncompressed the image file if this is not the first
@@ -49,11 +50,14 @@ if [ -e "${work_image_xz}" ]; then
     pushd "${workspace}"
     md5sum --check "${image_file_xz}.md5sum"
     popd
-    if [ ! -e "${work_image}" ]; then
+    if [ ! -e "${work_image}" ] && [ ! -e "${work_output_image}" ]; then
         xz --decompress --keep "${work_image_xz}"
     fi
 fi
 
+if [ ! -e "${work_output_image}" ]; then
+    mv "${work_image}" "${work_output_image}"
+fi
 # Download required software before doing time expensive operations.
 # Remove this to make this project more generic.
 ./download_smartshelf_software.sh "${workspace}"
@@ -62,7 +66,7 @@ fi
 # Expand the the file system to fill the expanded disk size.
 # Note: ./resize.sh doesn't seem to work if the loop device is setup outside
 # of the script...
-./resize.sh "${work_image}" 2
+./resize.sh "${work_output_image}" 2
 
 # Let everything in ./resize.sh finish???
 # this is a hack, shouldn't be necessary.
@@ -77,7 +81,7 @@ sleep 1
 loop_device=$(losetup -f)
 
 # use image_utils.sh functions that has auto cleanup
-with_loop_device "${loop_device}" "${work_image}"
+with_loop_device "${loop_device}" "${work_output_image}"
 
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
@@ -133,10 +137,16 @@ chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n
 rm -f "${boot_partition_mount}/uInitrd"
 cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
 
-# Finally, move final product to dist.  Copy if $DEBUG is set.
-# Bump version number as well?
-#if [ -n "$DEBUG" ]; then
-#    cp "${work_image}" "${dist}/${output_file}"
-#else
-#    mv "${work_image}" "${dist}/${output_file}"
-#fi
+# https://linux.die.net/man/8/sync
+# sync writes any data buffered in memory out to disk.
+sync
+
+# Compress the full image and move to dist. Save full image to make
+# root filesystem and netboot artifacts
+# Going with simple versioning right now - YYYYmmddHHMMSS
+pushd "${workspace}"
+xz --keep "${output_image_file}"
+popd
+
+# there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
+mv "${work_output_image}.xz" "./dist/${output_image_file}-$(date +%Y%m%d%H%M%S).xz"
