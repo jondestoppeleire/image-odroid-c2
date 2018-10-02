@@ -17,29 +17,18 @@ fi
 # https://manpages.debian.org/wheezy/dpkg-dev/deb-version.5.en.html
 # https://sources.debian.org/src/dpkg/1.19.1/lib/dpkg/version.c/
 #readonly deb_version=$(sudo apt-cache show shellcheck | awk '{ pring $2 }')
+readonly shellcheck_version=0.4.6
+
 is_compatible_version() {
-    local deb_version="$1"
-    local upstream_version major minor patch
-
-    # good enough parsing, not completely reliable as it's not the full deb-version parsing.
-    upstream_version=$(echo "${deb_version}" | cut -d '-' -f 1)
-    major=$(echo "${upstream_version}" | cut -d '.' -f 1)
-    minor=$(echo "${upstream_version}" | cut -d '.' -f 2)
-    patch=$(echo "${upstream_version}" | cut -d '.' -f 3)
-
-    # This is not a boolean - this is the return value (0 is true, > 0 is false)
-    local is_compat=1;
-    if [ "${major}" -ge 0 ] && [ "${minor}" -ge 4 ] && [ "${patch}" -ge 6 ]; then
-        is_compat=0
-    fi
-    return "${is_compat}"
+    dpkg --compare-versions "$1" ge "${shellcheck_version}"
+    return $?
 }
 
 install_shellcheck() {
     # scversion picked to match travis:
     # https://docs.travis-ci.com/user/build-environment-updates/
     # https://docs.travis-ci.com/user/build-environment-updates/2017-09-06/#changed
-    readonly scversion=v0.4.6
+    readonly scversion="v${shellcheck_version}"
     curl -LSs "https://shellcheck.storage.googleapis.com/shellcheck-${scversion}.linux.x86_64.tar.xz" -o "/tmp/shellcheck-${scversion}.tar.xz"
     tar --xz -xvf "/tmp/shellcheck-${scversion}.tar.xz" -C /tmp
     sudo install "/tmp/shellcheck-${scversion}/shellcheck" /usr/local/bin
