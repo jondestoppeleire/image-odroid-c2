@@ -41,7 +41,7 @@ deploy:
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY
   bucket: eatsa-artifacts
-  local-dir: pkg
+  local-dir: dist
   upload-dir: wise-display
   acl: private
   on:
