@@ -22,11 +22,11 @@ build: docker_image
 
 .PHONY: dist
 dist: build
-	./dist_full_img.sh
+	./run_build_env.sh ubuntu-xenial ./dist_full_img.sh
 
 .PHONY: dist_only
 dist_only:
-	./dist_full_img.sh
+	./run_build_env.sh ubuntu-xenial ./dist_full_img.sh
 
 .PHONY: shell
 shell: docker_image

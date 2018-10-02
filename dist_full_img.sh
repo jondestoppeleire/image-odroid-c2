@@ -10,6 +10,8 @@ set -e
 # source common variables / configuration
 . ./setup.sh
 
+[ -n "${DEBUG}" ] && ls -lha "." "${workspace}" "${dist}"
+
 # Compress the full image and move to dist. Save full image to make
 # root filesystem and netboot artifacts
 # Going with simple versioning right now - YYYYmmddHHMMSS
