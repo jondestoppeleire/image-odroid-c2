@@ -8,29 +8,8 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-# GLOBALS
-export EATSAPASS="eatsa"
-# secret variable SKIP_APT_UPDATE to speed up development.
-
-readonly mydir="$PWD"
-readonly workspace="./workspace"
-readonly dist="./dist"
-
-mkdir -p "${workspace}"
-mkdir -p "${dist}"
-
-# Use a base working ubuntu image for the odroid-c2
-# Saved a copy of the image from https://odroid.in/ubuntu_16.04lts/ to S3.
-readonly image_file="ubuntu64-16.04.3-minimal-odroid-c2-20171005.img"
-#readonly image_file="ubuntu-18.04-3.16-minimal-odroid-c2-20180626.img"
-
-readonly image_file_xz="${image_file}.xz"
-readonly image_url="https://s3.amazonaws.com/eatsa-artifacts/wise-display/${image_file_xz}"
-readonly md5sum_url="${image_url}.md5sum"
-readonly work_image_xz="${workspace}/${image_file_xz}"
-readonly work_image="${workspace}/${image_file}"
-readonly output_image_file="eatsa-smartshelf-odroid-c2.img"
-readonly work_output_image="${workspace}/${output_image_file}"
+# source common variables / configuration
+. ./setup.sh
 
 # only download the image if it doesn't exist.
 # We may already have uncompressed the image file if this is not the first
@@ -137,16 +116,20 @@ chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n
 rm -f "${boot_partition_mount}/uInitrd"
 cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
 
+# clean up
+chroot "${rootfs_dir}" apt-get remove -y linux-firmware
+chroot "${rootfs_dir}" apt-get autoremove -y
+rm -rf "${rootfs_dir}"/usr/share/locale/*
+rm -rf "${rootfs_dir}"/usr/share/man/*
+
+rm -rf "${rootfs_dir}"/var/cache/apt/*
+rm -rf "${rootfs_dir}"/var/cache/debconf/*
+rm -rf "${rootfs_dir}"/var/cache/man/*
+rm -rf "${rootfs_dir}"/var/lib/apt/lists/*
+rm -rf "${rootfs_dir}"/var/tmp/*
+rm -rf "${rootfs_dir}"/usr/share/doc/*
+rm -rf "${rootfs_dir}"/usr/share/icons/*
+
 # https://linux.die.net/man/8/sync
 # sync writes any data buffered in memory out to disk.
 sync
-
-# Compress the full image and move to dist. Save full image to make
-# root filesystem and netboot artifacts
-# Going with simple versioning right now - YYYYmmddHHMMSS
-pushd "${workspace}"
-xz --keep "${output_image_file}"
-popd
-
-# there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
-mv "${work_output_image}.xz" "./dist/${output_image_file}-$(date +%Y%m%d%H%M%S).xz"

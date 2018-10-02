@@ -5,12 +5,7 @@ BASH_FILES = base-files/base-system/etc/network/if-up.d/wise-ifpreup-hostname \
 
 # depends on shellcheck 0.4.6+.  Will fail on 0.3.3.
 .PHONY: shellcheck
-shellcheck: docker_image
-	docker run --rm -it -e HOME --privileged \
-	 -h eatsa-odroid-c2-build-env \
-	 -v "$$HOME":"$$HOME" \
-	 -v "$$PWD":"$$PWD" -w "$$PWD" \
-	 eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial \
+shellcheck: build_setup
 	 /bin/bash -c "shellcheck $(SCRIPTS) && shellcheck -s sh $(SHELL_FILES) && shellcheck -s bash $(BASH_FILES)"
 
 .PHONY: build_setup
@@ -25,8 +20,16 @@ docker_image: build_setup
 build: docker_image
 	./run_build_env.sh ubuntu-xenial
 
+.PHONY: dist
+dist: build
+	./dist_full_img.sh
+
+.PHONY: dist_only
+dist_only:
+	./dist_full_img.sh
+
 .PHONY: shell
-shell: shellcheck
+shell: docker_image
 	./run_build_env.sh ubuntu-xenial /bin/bash
 
 # experimental

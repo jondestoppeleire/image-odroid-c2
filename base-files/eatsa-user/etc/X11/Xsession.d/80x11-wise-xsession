@@ -14,6 +14,7 @@
 
 # The file is called netboot-if.conf, but it is used regardless of netboot-ing.
 if [ -r /etc/netboot-if.conf ]; then
+    # shellcheck disable=SC1091
     . /etc/netboot-if.conf
     number=$(echo "$IPV4ADDR" | cut -d. -f4)
     eth_mac_full=$(cat "/sys/class/net/$DEVICE/address")
@@ -21,6 +22,7 @@ if [ -r /etc/netboot-if.conf ]; then
 fi
 
 if mount -r -L EATSACONF /mnt; then
+    # shellcheck disable=SC1091
     [ -r /mnt/config.txt ] && . /mnt/config.txt
     umount /mnt
 fi
@@ -28,11 +30,11 @@ fi
 if [ -n "$WISE_URL" ]; then
     # do nothing, use WISE_URL
     true
-elif [ -n "$WISE_ROLE" -a -n "$WISE_ID" ]; then
+elif [ -n "$WISE_ROLE" ] && [ -n "$WISE_ID" ]; then
     # we have a config.txt, use it
     # the host storemanager is configured in /etc/hosts, no need to calculate it
-    WISE_URL=http://storemanager:3000/$WISE_ROLE/$WISE_ID
-elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 -o "$number" -gt 230 ]; then
+    WISE_URL="http://storemanager:3000/$WISE_ROLE/$WISE_ID"
+elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 ] || [ "$number" -gt 230 ]; then
    if [ -z "$number" ]; then
        # we have no network connection
        cubby="$eth_mac"
@@ -42,7 +44,7 @@ elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 -o "$number" -gt 230 ]
    fi
    sed -e "s,%%TEXT%%,$cubby," /etc/X11/address.html > /tmp/address.html
    WISE_URL="file:///tmp/address.html"
-elif [ "$number" -gt 200 -a "$number" -lt 231 ]; then
+elif [ "$number" -gt 200 ] && [ "$number" -lt 231 ]; then
    # we have a proper IP address
    WISE_URL=http://storemanager:3000/cubby/$((number-200))
 else

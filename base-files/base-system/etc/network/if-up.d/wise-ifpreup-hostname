@@ -5,6 +5,7 @@ eth_mac=$(sed 's/://g' "/sys/class/net/$IFACE/address")
 [ -z "$eth_mac" ] && eth_mac=unknown
 
 if mount -r -L EATSACONF /mnt; then
+    # shellcheck disable=SC1091
     [ -r /mnt/config.txt ] && . /mnt/config.txt
     umount /mnt
 fi
