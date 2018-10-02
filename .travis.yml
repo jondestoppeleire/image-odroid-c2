@@ -26,11 +26,11 @@ install:
   - make shellcheck
 
 # The whole process takes about 20 min.
-# We split up the build and dist commands because of travis oddities around
-# timeouts, as `travis_wait 30 make dist` did not work.
+# Note that the xz command uses --verbose to write things to tty as
+# travis-ci will timeout the build otherwise.  xz takes a long time (more than)
+# 10 minutes to run when zipping, and travis times out after 10 minutes.
 script:
-- make build
-- travis_wait 30 make dist_only
+- make dist
 
 deploy:
   skip_cleanup: true
