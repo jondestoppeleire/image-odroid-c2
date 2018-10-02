@@ -1,0 +1,3 @@
+# UNCONFIGURED FSTAB FOR BASE SYSTEM
+LABEL=boot /media/boot vfat defaults 0 0
+UUID=e139ce78-9841-40fe-8823-96a304a09859 / ext4 errors=remount-ro,noatime 0 1

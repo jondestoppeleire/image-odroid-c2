@@ -1,0 +1,5 @@
+run_watchdog=1
+run_wd_keepalive=1
+watchdog_module=s3c2410_wdt
+watchdog_options="-c /etc/watchdog.conf"
+

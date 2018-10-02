@@ -16,33 +16,33 @@ addons:
 services:
   - docker
 
-# Install ubuntu packages or custom services
-#
-# Note that build-setup.sh should be run before `docker build`.
-# The `docker build` will give warnings from binfmt_misc, but may actually
-# error out if binfmt_support package is not installed beforehand.
-before_install:
-  - curl https://s3.amazonaws.com/eatsa-packages/build-framework/build-framework-master-1.5.0.tgz -o /tmp/bf.tgz
-  - tar --directory $HOME -xzf /tmp/bf.tgz
-  - build-scripts/build-setup.sh
-  - docker build -t eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial dockerfiles/ubuntu-xenial
-  - docker images
-
-# Install any dependencies required
+# Note that `build-setup.sh` should be run before `docker build`.
+# Without the packages installed on the host, specifically binfmt_support,
+# the docker image will not be built correctly.  With the package installed,
+# the docker image build will only produce warnings, but the end image will
+# be functional.
 install:
-  - shellcheck mk_build_env.sh run_build_env.sh build-scripts/build-setup.sh
+  - build-scripts/build-setup.sh
+  - make shellcheck
 
+# The whole process takes about 20 min.
+# Note that the xz command uses --verbose to write things to tty as
+# travis-ci will timeout the build otherwise.  xz takes a long time (more than)
+# 10 minutes to run when zipping, and travis times out after 10 minutes.
 script:
-- echo "Run the build here?"
+- make dist
+# below lines used for debugging travis issues.
+#- make build
+#- ./run_build_env.sh ubuntu-xenial ./dist_full_img.sh
 
 deploy:
   skip_cleanup: true
   provider: s3
   access_key_id: $AWS_ACCESS_KEY_ID
   secret_access_key: $AWS_SECRET_ACCESS_KEY
-  bucket: eatsa-packages
+  bucket: eatsa-artifacts
   local-dir: pkg
-  upload-dir: image-odroid-c2
+  upload-dir: wise-display
   acl: private
   on:
     all_branches: true

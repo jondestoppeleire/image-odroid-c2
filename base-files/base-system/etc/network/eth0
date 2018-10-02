@@ -1,0 +1,5 @@
+# Use allow-hotplug instead of auto to avoid the OS waiting for network
+# if the device is unpluged during boot.
+# Also, see /lib/systemd/system/networking.service file for timeout setting.
+allow-hotplug eth0
+iface eth0 inet dhcp

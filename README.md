@@ -19,7 +19,7 @@ Build odroid-c2:
 The Vagrantfile included in this project is the development environment used
 to cross compile package across different platforms.
 
-The choice of base image is based on parity with travis-ci distribution.
+The choice of build environment base image is based on parity with travis-ci distribution.
 Currently, this means Ubuntu 14.04.
 
 This means that, yes, we're running Vagrant, and inside the Vagrant VM, docker
@@ -38,17 +38,23 @@ a `chroot` is used to setup the ARM binaries.
 
 ## Development
 
-This is not so simple.
+Take a deep breath.  Patience.
 
-In order to emulate the build environment, Travis-ci, Vagrant is used to
-simulate the travis VM.
+Vagrant is used to simulate the travis VM.
 
     $ vagrant up
     $ vagrant ssh
     $ ls /vagrant
 
-In order to get the right build tools, depending on the Single Board Computer
-platform, docker *may* need to be invovled.
+The Vagrant file should run `/vagrant/build-scripts/build-setup` automatically to install all the tools needed to build the cross compilation environmnt.
+
+### Quick build
+
+To download and build an entire image:
+
+    /vagrant $ make build
+
+and check the `./dist` directory when the build finishes.  `make build` can be called multiple times and will build as smartly (like not re-downloading files) as it can.
 
 ### Odroid-c2
 
@@ -60,16 +66,29 @@ container.
 
 A convience script to create the docker image, `sudo` as necessary:
 
-    $ sudo ./mk_build_env.sh ubuntu-xenial
+    $ ./mk_build_env.sh ubuntu-xenial
+
+Or
+
+    $ make docker_image
 
 This script goes into the build-env/ directory, finds the ubuntu-xenial
 directory,  and uses the Dockerfile in that subdirectory.
 
 #### Run the image as a container
 
-Also a convience script:
+Using the lower level script to kick off a build:
 
-    $ sudo ./run_build_env.sh ubuntu-xenial
+    $ ./run_build_env.sh ubuntu-xenial
+
+Or
+
+    $ make build
+
+To Debug
+
+    $ ./run_build_env.sh ubuntu-xenial /bin/bash
+    # alternatively `make shell`
 
 The containers are set to be deleted when the shell exists, so any work done
 outside of mounted directories will be discarded.
@@ -95,3 +114,7 @@ scripted at the moment - a future improvement to do.
     eatsa-odroid-c2-rootfs    build-env-ubuntu-bionic   25d2ae25f16f        5 days ago          480MB
     ubuntu                    xenial                    52b10959e8aa        2 weeks ago         115MB
     $ sudo docker rmi ba3f94d78660
+
+### On going maintaince
+
+The built images are stored in https://s3.amazonaws.com/eatsa-artifacts/wise-display/ - clean this directory out regularly as the images built are fairly large and can cost a lot to store many of them.
