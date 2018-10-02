@@ -30,7 +30,7 @@ if [ -e "${work_image_xz}" ]; then
     md5sum --check "${image_file_xz}.md5sum"
     popd
     if [ ! -e "${work_image}" ] && [ ! -e "${work_output_image}" ]; then
-        xz --decompress --keep "${work_image_xz}"
+        xz --verbose --decompress --keep "${work_image_xz}"
     fi
 fi
 

@@ -14,7 +14,7 @@ set -e
 # root filesystem and netboot artifacts
 # Going with simple versioning right now - YYYYmmddHHMMSS
 pushd "${workspace}"
-xz --keep "${output_image_file}"
+xz --verbose --keep "${output_image_file}"
 popd
 
 # there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
