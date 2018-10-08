@@ -8,9 +8,22 @@
 #     . ./setup.sh
 #
 
+[ -n "${DEBUG}" ] && set -x
+
+# Allows multiple scripts to import this file without erroring out
+# on multiple declarations of readonly variables
+if [ -n "${SETUP_SH_IMPORTED}" ]; then
+    [ -n "${DEBUG}" ] && echo "setup.sh already ran before, short circuiting."
+    return 0
+fi
+
+# Not imported before, set the flag and let the rest of the script run.
+readonly SETUP_SH_IMPORTED="setup.sh is now imported."
+
 # GLOBALS
 export EATSAPASS="eatsa"
-# secret variable SKIP_APT_UPDATE to speed up development.
+# secret variable SKIP_APT_UPDATE to skip apt update step in build.sh
+# export SKIP_APT_UPDATE=1
 
 readonly workspace="./workspace"
 readonly dist="./dist"
@@ -30,3 +43,8 @@ readonly work_image_xz="${workspace}/${image_file_xz}"
 readonly work_image="${workspace}/${image_file}"
 readonly output_image_file="eatsa-smartshelf-odroid-c2.img"
 readonly work_output_image="${workspace}/${output_image_file}"
+
+readonly rootfs_dir="${workspace}/rootfs"
+readonly boot_partition_mount="${rootfs_dir}/media/boot"
+
+readonly dist_version="$(date +%Y%m%d%H%M%S)"

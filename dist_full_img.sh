@@ -8,7 +8,7 @@ set -e
 [ -n "${DEBUG}" ] && set -x
 
 # source common variables / configuration
-. ./setup.sh
+. setup.sh
 
 [ -n "${DEBUG}" ] && ls -lha "." "${workspace}" "${dist}"
 
@@ -20,4 +20,4 @@ xz --verbose --keep "${output_image_file}"
 popd
 
 # there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
-mv "${work_output_image}.xz" "${dist}/${output_image_file}-$(date +%Y%m%d%H%M%S).xz"
+mv "${work_output_image}.xz" "${dist}/${output_image_file}-${dist_version}.xz"

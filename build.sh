@@ -9,7 +9,7 @@ set -e
 [ -n "${DEBUG}" ] && set -x
 
 # source common variables / configuration
-. ./setup.sh
+. setup.sh
 
 # only download the image if it doesn't exist.
 # We may already have uncompressed the image file if this is not the first
@@ -37,6 +37,7 @@ fi
 if [ ! -e "${work_output_image}" ]; then
     mv "${work_image}" "${work_output_image}"
 fi
+
 # Download required software before doing time expensive operations.
 # Remove this to make this project more generic.
 ./download_smartshelf_software.sh "${workspace}"
@@ -44,7 +45,7 @@ fi
 # Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
 # Note: ./resize.sh doesn't seem to work if the loop device is setup outside
-# of the script...
+# of the script. Not sure if this is because this is run in a subshell.
 ./resize.sh "${work_output_image}" 2
 
 # Let everything in ./resize.sh finish???
@@ -61,9 +62,6 @@ loop_device=$(losetup -f)
 
 # use image_utils.sh functions that has auto cleanup
 with_loop_device "${loop_device}" "${work_output_image}"
-
-readonly rootfs_dir="${workspace}/rootfs"
-readonly boot_partition_mount="${rootfs_dir}/media/boot"
 
 # image_utils.sh - mounts the partitions and auto umount when script exits.
 with_mount "${loop_device}p2" "${rootfs_dir}"
@@ -115,6 +113,11 @@ chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n
 # move newly built initrd's to boot partition
 rm -f "${boot_partition_mount}/uInitrd"
 cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
+
+echo "$0: importing build_debarchive.sh"
+# Need to build the debarchive file before deleting the files.
+# This is a vestage from wise-display/build-scripts/build-install
+. build_debarchive.sh
 
 # clean up
 chroot "${rootfs_dir}" apt-get remove -y linux-firmware

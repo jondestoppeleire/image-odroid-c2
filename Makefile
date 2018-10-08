@@ -17,7 +17,7 @@ docker_image: build_setup
 	./mk_build_env.sh ubuntu-xenial
 
 .PHONY: build
-build: docker_image
+build: shellcheck docker_image
 	./run_build_env.sh ubuntu-xenial
 
 .PHONY: dist
@@ -31,6 +31,10 @@ dist_only:
 .PHONY: shell
 shell: docker_image
 	./run_build_env.sh ubuntu-xenial /bin/bash
+
+.PHONY: clean
+clean:
+	rm -rf workspace
 
 # experimental
 .PHONY: docker_image_bionic
