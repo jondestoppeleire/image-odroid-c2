@@ -2,10 +2,9 @@
 
 [![Build Status](https://travis-ci.com/Keenwawa/image-odroid-c2.svg?branch=master)](https://travis-ci.com/Keenwawa/image-odroid-c2)
 
-Build odroid-c2:
-* full SD card image
-* root file system
-* boot/kernel : partition/files
+This project produces:
+* a full image to be flashable on an SD card for development
+* a debarchive and filesystem tarballs mirroring wise-display for it's custom netboot scheme.
 
 ## Prerequisites
 
@@ -48,11 +47,11 @@ Vagrant is used to simulate the travis VM.
 
 The Vagrant file should run `/vagrant/build-scripts/build-setup` automatically to install all the tools needed to build the cross compilation environmnt.
 
-### Quick build
+### Building and distributing
 
 To download and build an entire image:
 
-    /vagrant $ make build
+    /vagrant $ make dist
 
 and check the `./dist` directory when the build finishes.  `make build` can be called multiple times and will build as smartly (like not re-downloading files) as it can.
 

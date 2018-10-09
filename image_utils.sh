@@ -186,7 +186,8 @@ cleanup_chroot_mount() {
     local chroot_dir="$1"
     local mount_point="$2"
 
-    chroot "${chroot_dir}" umount "${mount_point}"
+    chroot "${chroot_dir}" \
+      /bin/bash -c "if mountpoint -q ${mount_point}; then umount ${mount_point}; else exit 0; fi"
 }
 
 #####

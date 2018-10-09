@@ -120,6 +120,7 @@ echo "$0: importing build_debarchive.sh"
 . build_debarchive.sh
 
 # clean up
+# As defined in wise-display/build-scripts/build-install
 chroot "${rootfs_dir}" apt-get remove -y linux-firmware
 chroot "${rootfs_dir}" apt-get autoremove -y
 rm -rf "${rootfs_dir}"/usr/share/locale/*
@@ -136,3 +137,11 @@ rm -rf "${rootfs_dir}"/usr/share/icons/*
 # https://linux.die.net/man/8/sync
 # sync writes any data buffered in memory out to disk.
 sync
+
+# create a squashfs image before unmounting
+# This code needs to move into a netboot creation step
+cleanup_chroot_mount "${rootfs_dir}" /dev/pts
+cleanup_chroot_mount "${rootfs_dir}" /sys
+cleanup_chroot_mount "${rootfs_dir}" /proc
+mksquashfs "${rootfs_dir}" filesystem-odroid_c2.squashfs -b 4096 -e boot
+mv filesystem-odroid_c2.squashfs "./dist/filesystem-odroid_c2-${dist_version}.squashfs"
