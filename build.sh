@@ -145,3 +145,21 @@ cleanup_chroot_mount "${rootfs_dir}" /sys
 cleanup_chroot_mount "${rootfs_dir}" /proc
 mksquashfs "${rootfs_dir}" filesystem-odroid_c2.squashfs -b 4096 -e boot
 mv filesystem-odroid_c2.squashfs "./dist/filesystem-odroid_c2-${dist_version}.squashfs"
+
+# netboot boot image
+# copy over the MBR and boot partition
+dd if="${work_output_image}" of="${work_output_image}-netboot.img" bs=512 count=264192
+# fix the partition table, as we didn't copy over partition #2!
+loop_device_netboot=$(losetup -f)
+with_loop_device "${loop_device_netboot}" "${work_output_image}-netboot.img" "skip_partprobe"
+# delete partition 2
+# The funky syntax: run fdisk with the here-document (<<EOF) and return 'true'
+# regardless of fdisk return code
+fdisk -u "${loop_device_netboot}" <<EOF || true
+d
+2
+w
+EOF
+partprobe "${loop_device_netboot}"
+echo "it all worked!"
+# mount the partition and write new boot.ini for netbooting

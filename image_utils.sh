@@ -108,6 +108,7 @@ cleanup_loop_device() {
 with_loop_device() {
     local loop_device="$1"
     local img_file="$2"
+    local skip_partprobe="$3"
 
     # Do our best to make sure loop device is free.
     if [ "${loop_device}" != "$(losetup -f)" ]; then
@@ -128,7 +129,9 @@ with_loop_device() {
     losetup "${loop_device}" "${img_file}"
 
     # tell the OS there's a new device and partitions.
-    partprobe "${loop_device}"
+    if [ -z "${skip_partprobe}" ]; then
+        partprobe "${loop_device}"
+    fi
 }
 
 #####
