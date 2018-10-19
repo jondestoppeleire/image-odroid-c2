@@ -8,28 +8,20 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-usage() {
-    echo "Install software for the odroid-c2 for eatsa's uses."
-    echo "Assumes that a rootfs already exists and mounts are setup."
-    echo
-    echo "Usage: $0 rootfs_dir"
-    echo
-    echo "  rootfs_dir - a directory to chroot into"
-    echo
-    exit 1
-}
+. setup.sh
 
-rootfs_dir="$1"
 if [ ! -d "${rootfs_dir}" ]; then
     echo "The specified chroot directory ${rootfs_dir} does not exist!"
-    usage
+    exit 1
 fi
 
-# copy all base files over
-cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
+run_install_boot_customizations() {
+    # copy all base files over
+    cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
 
-readonly plymouth_themes="/usr/share/plymouth/themes"
-chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.plymouth /etc/alternatives/default.plymouth
+    local plymouth_themes="/usr/share/plymouth/themes"
+    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.plymouth /etc/alternatives/default.plymouth
 
-# not sure if this is used since we're using uboot but not grub
-chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.grub /etc/alternatives/default.plymouth.grub
+    # not sure if this is used since we're using uboot but not grub
+    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.grub /etc/alternatives/default.plymouth.grub
+}

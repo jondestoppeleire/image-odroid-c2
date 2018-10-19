@@ -18,78 +18,66 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-readonly image_file=$1
-readonly partition_number=$2
-loop_device=$3
+. setup.sh
 
-usage() {
-    echo "Resize the file system in a disk image."
-    echo
-    echo "Usage: $0 loop_device image_file parition_number [loop_device]"
-    echo
-    echo "  image_file - an image containing disk partitions."
-    echo "  partition_number - the partition number in the image to resize."
-    echo "  loop_device (optional) - the loop device associated with the image_file."
-    echo
-    exit 1
+_check_args() {
+    local partition_number="$1"
+
+    if ! fdisk -l "${work_output_image}" > /dev/null 2>&1; then
+        echo "System fdisk command does not support '-l' option.  Are you running Linux?"
+        exit 1
+    fi
+
+    if [ -z "${partition_number}" ]; then
+        echo "Partition number not specified."
+        usage
+    fi
+
+    partition_count=$(fdisk -l "${work_output_image}" | grep -c "${work_output_image}[[:digit:]+]")
+    if [ "${partition_number}" -gt "${partition_count}" ]; then
+        echo "Requested resize of partition # ${partition_number} is larger than"
+        echo "number of partitions found (${partition_count}) in ${work_output_image}."
+        exit 1
+    fi
 }
-
-if [ ! -e "${image_file}" ]; then
-    echo "image_file '${image_file}' not found."
-    usage
-fi
-
-if ! fdisk -l "${image_file}" > /dev/null 2>&1; then
-    echo "System fdisk command does not support '-l' option.  Are you running Linux?"
-    exit 1
-fi
-
-if [ -z "${partition_number}" ]; then
-    echo "Partition number not specified."
-    usage
-fi
-
-partition_count=$(fdisk -l "${image_file}" | grep -c "${image_file}[[:digit:]+]")
-if [ "${partition_number}" -gt "${partition_count}" ]; then
-    echo "Requested resize of partition # ${partition_number} is larger than"
-    echo "number of partitions found (${partition_count}) in ${image_file}."
-    exit 1
-fi
 
 # Expand the file.  This happens to make the last partition of the image larger.
 # 2781872128 is the size of the file after expansion, figured out manually.
-readonly image_file_size=$(wc -c "${image_file}" | cut -f 1 -d ' ')
-if [ "${image_file_size}" -lt 2781872128 ]; then
-    # yes, you can grow file size with truncate.
-    truncate --size=+1G "${image_file}"
-fi
-
-if [ -z "${loop_device}" ]; then
-    # get utility functions
-    . ./image_utils.sh
-
-    # find first available loop device.
-    loop_device=$(losetup -f)
-
-    with_loop_device "${loop_device}" "${image_file}"
-fi
+_expand_file() {
+    local image_file_size
+    image_file_size=$(wc -c "${work_output_image}" | cut -f 1 -d ' ')
+    if [ "${image_file_size}" -lt 2781872128 ]; then
+        # yes, you can grow file size with truncate.
+        truncate --size=+1G "${work_output_image}"
+    fi
+}
 
 #####
 # Expand the file system.
 #####
+_expand_filesystem() {
+    local loop_device="$1"
+    local partition_number="$2"
 
-# Expand partition $partition_number to the rest of the file.
-parted "${loop_device}" -s -- resizepart "${partition_number}" 100%
+    # Expand partition $partition_number to the rest of the file.
+    parted "${loop_device}" -s -- resizepart "${partition_number}" 100%
 
-# Force a file system check and expand the file system.
-# Typing the commands look like this:
-# `e2fsck -f /dev/loop0p2`
-e2fsck -f "${loop_device}p${partition_number}"
-resize2fs "${loop_device}p${partition_number}"
+    # Force a file system check and expand the file system.
+    # Typing the commands look like this:
+    # `e2fsck -f /dev/loop0p2`
+    e2fsck -f "${loop_device}p${partition_number}"
+    resize2fs "${loop_device}p${partition_number}"
 
-# Tell the kernel to reread partition info of the loop device since we changed
-# the size of the partition.
-partprobe "${loop_device}"
+    # Tell the kernel to reread partition info of the loop device since we changed
+    # the size of the partition.
+    partprobe "${loop_device}"
+}
 
-# done - cleanup should be invoked due to the trap.
-exit
+run_resize() {
+    local loop_device="$1"
+    local partition_number="$2"
+
+    _check_args "${partition_number}"
+    _expand_file
+    _expand_filesystem "${loop_device}" "${partition_number}"
+}

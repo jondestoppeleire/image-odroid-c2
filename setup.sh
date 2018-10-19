@@ -47,4 +47,6 @@ readonly work_output_image="${workspace}/${output_image_file}"
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
 
+mkdir -p "${boot_partition_mount}"
+
 readonly dist_version="$(date +%Y%m%d%H%M%S)"

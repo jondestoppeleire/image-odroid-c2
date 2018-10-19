@@ -34,26 +34,20 @@ if [ -e "${work_image_xz}" ]; then
     fi
 fi
 
+# ${work_image} already exists (original file decompressed by xz),
+# rename it to the working image. This makes it less confusing if the extracted
+# file was tampered with or freshly decompressed.
 if [ ! -e "${work_output_image}" ]; then
     mv "${work_image}" "${work_output_image}"
 fi
 
 # Download required software before doing time expensive operations.
 # Remove this to make this project more generic.
-./download_smartshelf_software.sh "${workspace}"
-
-# Grow the disk image file.
-# Expand the the file system to fill the expanded disk size.
-# Note: ./resize.sh doesn't seem to work if the loop device is setup outside
-# of the script. Not sure if this is because this is run in a subshell.
-./resize.sh "${work_output_image}" 2
-
-# Let everything in ./resize.sh finish???
-# this is a hack, shouldn't be necessary.
-sleep 1
+. smartshelf_software.sh
+run_download_smartshelf_software
 
 # import
-. ./image_utils.sh
+. image_utils.sh
 
 # Mount the image's partitions and write to them.
 
@@ -62,6 +56,11 @@ loop_device=$(losetup -f)
 
 # use image_utils.sh functions that has auto cleanup
 with_loop_device "${loop_device}" "${work_output_image}"
+
+# Grow the disk image file.
+# Expand the the file system to fill the expanded disk size.
+. resize.sh
+run_resize "${loop_device}" 2
 
 # image_utils.sh - mounts the partitions and auto umount when script exits.
 with_mount "${loop_device}p2" "${rootfs_dir}"
@@ -74,15 +73,26 @@ with_chroot_mount "${rootfs_dir}" devpts /dev/pts
 temp_disable_invoke_rc_d "${rootfs_dir}"
 
 # chroot and install software
-[ -z "${SKIP_APT_UPDATE}" ] && ./install_apt_update.sh "${rootfs_dir}"
-./install_base_system.sh "${rootfs_dir}"
-./install_eatsa_user.sh "${rootfs_dir}"
+. install_apt_update.sh
+[ -z "${SKIP_APT_UPDATE}" ] && run_install_apt_update
+
+. install_base_system.sh
+run_install_base_system
+
+. install_eatsa_user.sh
+run_install_eatsa_user
 
 # call boot customizations last
-./install_boot_customizations.sh "${rootfs_dir}"
+. install_boot_customizations.sh
+run_install_boot_customizations
 
-# Install smartshelf software
-./install_smartshelf_software.sh "${workspace}" "${rootfs_dir}"
+# Install smartshelf software, from smartshelf_software.sh
+run_install_smartshelf_software
+
+# hack janky initramfs-tools netboot scheme
+# check boot.ini, changed boot from root to script
+
+
 
 # Generate new initrd to capture changes from everything above.
 # Remove unused kernels
