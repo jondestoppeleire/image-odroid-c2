@@ -71,7 +71,10 @@ fi
 /usr/bin/openbox-session &
 
 # allow full-scree exit if WISE_OPTS is set
-[ -n "$DEBUG" ] && WISE_OPTS=1
+if [ -n "$DEBUG" ]; then
+    WISE_OPTS=1
+fi
+
 if [ -n "$WISE_OPTS" ]; then
     chromium_mode="--start-fullscreen"
 else
