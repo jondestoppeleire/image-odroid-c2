@@ -3,6 +3,15 @@
 # build the odroid-c2 os image.
 #
 # Not using build-framework to simplify reading and comprehension.
+#
+# Environment variables:
+#
+#  * DEBUG
+#      - Set this to any value to print out debug information, empty to unset.
+#  * SKIP_FULL_IMAGE_DIST
+#      - set this to any value to skip producing a full image as it takes a
+#        a long time for xz to compress and dump the image in ./dist.  Useful
+#        when debugging or only caring about netboot portion during development.
 
 # exit script on command failure not explicitly caught
 set -e
@@ -48,6 +57,12 @@ run_download_smartshelf_software
 
 # import
 . image_utils.sh
+. resize.sh
+
+# Grow the disk image before attaching it to a loop device, otherwise the
+# file size changes won't be reflected when already attached to loop device.
+# Not the best function signature, see the definition inside resize.sh
+run_expand_file
 
 # Mount the image's partitions and write to them.
 
@@ -59,8 +74,7 @@ with_loop_device "${loop_device}" "${work_output_image}"
 
 # Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
-. resize.sh
-run_resize "${loop_device}" 2
+run_resize_partition "${loop_device}" 2
 
 # image_utils.sh - mounts the partitions and auto umount when script exits.
 with_mount "${loop_device}p2" "${rootfs_dir}"
@@ -89,11 +103,6 @@ run_install_boot_customizations
 # Install smartshelf software, from smartshelf_software.sh
 run_install_smartshelf_software
 
-# hack janky initramfs-tools netboot scheme
-# check boot.ini, changed boot from root to script
-
-
-
 # Generate new initrd to capture changes from everything above.
 # Remove unused kernels
 readonly removable_kernels=$(chroot "${rootfs_dir}" dpkg -l linux-image-\* | grep ^rc | awk '{ print $2 }')
@@ -101,32 +110,33 @@ if [ -n "${removable_kernels}" ]; then
     echo "${removable_kernels[@]}" | xargs chroot "${rootfs_dir}" dpkg --purge
 fi
 
-# Find the kernel version that's installed
-# bash-fu breakdown:
-#   $ dpkg --get-selections | grep "linux-image-[[:digit]].*"
-#   linux-image-3.14.79-116				install
-readonly installed_kernel_package=$(chroot "${rootfs_dir}" dpkg --get-selections | grep "linux-image-[[:digit:]].*")
+update_uInitrd() {
+    # Find the kernel version that's installed
+    # bash-fu breakdown:
+    #   $ dpkg --get-selections | grep "linux-image-[[:digit]].*"
+    #   linux-image-3.14.79-116				install
+    local installed_kernel_package
+    installed_kernel_package=$(chroot "${rootfs_dir}" dpkg --get-selections | grep "linux-image-[[:digit:]].*")
 
-# Get the first column and remove the "linux-image-" prefix
-readonly kernel_version=$(echo "${installed_kernel_package}" | awk '{ print $1 }' | sed 's/linux-image-//')
+    # Get the first column and remove the "linux-image-" prefix
+    local kernel_version
+    kernel_version=$(echo "${installed_kernel_package}" | awk '{ print $1 }' | sed 's/linux-image-//')
 
-# delete old version if it exists
-rm -f "${rootfs_dir}/boot/uInitrd-${kernel_version}"
+    # register update-initramfs -u so that it's only run once.
+    chroot "${rootfs_dir}" update-initramfs -u
 
-# register update-initramfs -u so that it's only run once.
-chroot "${rootfs_dir}" update-initramfs -u
+    # create the uInitrd, U-boot
+    chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n initramfs \
+        -d "/boot/initrd.img-${kernel_version}" "/boot/uInitrd-${kernel_version}"
 
-# create the uInitrd, U-boot
-chroot "${rootfs_dir}" mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n initramfs \
-    -d "/boot/initrd.img-${kernel_version}" "/boot/uInitrd-${kernel_version}"
+    # overwrite initrd in boot partition with one just generated.
+    cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
+}
 
-# move newly built initrd's to boot partition
-rm -f "${boot_partition_mount}/uInitrd"
-cp -v "${rootfs_dir}/boot/uInitrd-${kernel_version}" "${boot_partition_mount}/uInitrd"
+update_uInitrd
 
-echo "$0: importing build_debarchive.sh"
 # Need to build the debarchive file before deleting the files.
-# This is a vestage from wise-display/build-scripts/build-install
+# This debarchive thing is a vestage from wise-display/build-scripts/build-install
 . build_debarchive.sh
 
 # clean up
@@ -147,6 +157,25 @@ rm -rf "${rootfs_dir}"/usr/share/icons/*
 # https://linux.die.net/man/8/sync
 # sync writes any data buffered in memory out to disk.
 sync
+
+# If not skipping full image dist, compress the current .img file and mv it to
+# the ./dist directory.
+if [ -z "${SKIP_FULL_IMAGE_DIST}" ]; then
+    . dist_full_img.sh
+fi
+
+# Do netboot customizations here, as the working .img file will be modified
+# heavily.
+
+# see http://manpages.ubuntu.com/manpages/xenial/man8/initramfs-tools.8.html
+# for a tutorial on what the files do.
+
+# overwrites many files:
+#   - /media/boot/boot.ini
+cp -Rv base-files/netboot-customizations/* "${rootfs_dir}/"
+
+# update the initial ram disk since boot.ini changed.
+update_uInitrd
 
 # create a squashfs image before unmounting
 # This code needs to move into a netboot creation step
