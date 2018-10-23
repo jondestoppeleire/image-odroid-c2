@@ -42,6 +42,7 @@ if [ "${os_name}" = "Darwin" ]; then
      -v "${PWD}":"${PWD}" -w "${PWD}" \
      -v /dev:/dev \
      -e "DEBUG=${DEBUG}" \
+     -e "SKIP_FULL_IMAGE_DIST=${SKIP_FULL_IMAGE_DIST}" \
      eatsa-odroid-c2-rootfs:build-env-"${distro}" \
      "${container_command}"
 else
@@ -54,6 +55,7 @@ else
      -v /dev:/dev \
      -v /run/udev:/run/udev:ro \
      -e "DEBUG=${DEBUG}" \
+     -e "SKIP_FULL_IMAGE_DIST=${SKIP_FULL_IMAGE_DIST}" \
      eatsa-odroid-c2-rootfs:build-env-"${distro}" \
      "${container_command}"
 fi

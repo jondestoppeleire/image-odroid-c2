@@ -2,6 +2,8 @@
 #
 # Downloads the fw-smartshelf dependecies and deployables.
 #
+# This can be removed out of the image build process and into
+# the fw-smartshelf build process to match other packages at eatsa.
 
 # Enable errexit option (exit script on error of any command)
 set -e

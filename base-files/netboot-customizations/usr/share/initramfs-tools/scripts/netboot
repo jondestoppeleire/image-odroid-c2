@@ -1,0 +1,169 @@
+#!/bin/sh
+
+# this file ends up in initrd /scripts/netboot
+# add "boot=netboot" to the command line to use it
+
+PREREQ=""
+prereqs() {
+     echo "$PREREQ"
+}
+
+case $1 in
+    prereqs)
+         prereqs
+         exit 0
+         ;;
+esac
+
+mountroot() {
+    echo "/scripts/netboot starting..."
+
+    # make sure modules we'll need are loaded
+    modprobe -q af_packet
+    # make sure udev has handled all device file creation events
+    udevadm trigger
+    udevadm settle
+
+    TIMEOUT=604800
+    WISE_SMPORT=1990
+    boot_args=$(cat /prod/cmdline)
+    for n in $boot_args; do
+        case $n in
+            netboot.debug) set -x ;;
+            netboot.fs=*) FS_NAME="${n#netboot.fs=}" ;;
+            netboot.timeout=*) TIMEOUT="${n#netboot.timeout=}" ;;
+            netboot.sm_ip=*) WISE_SMIP="${n#netboot.sm_ip=}" ;;
+            netboot.sm_port=*) WISE_SMPORT="${n#netboot.sm_port=}" ;;
+            netboot.delay=*) DELAY="${n#netboot.delay=}" ;;
+        esac
+    done
+
+    # source our config if it's present
+    # don't source the WISE_WPA line if present
+    mkdir -p /mnt
+    if mount.util-linux -L EATSACONF /mnt; then
+        if [ -e /mnt/config.txt ]; then
+            echo "config.txt found, sourcing..."
+            cp /mnt/config.txt /tmp/
+            grep -v WISE_WPA /mnt/config.txt > /tmp/config-nowpa.txt
+            # /tmp/config-nowpa.txt comes from USB stick, of course shellcheck
+            # won't find this file.
+            # shellcheck disable=SC1091
+            . /tmp/config-nowpa.txt
+        fi
+        umount /mnt
+    fi
+
+    echo "configuring eth0..."
+    DEVICE=eth0
+    ip link set dev eth0 up
+
+    # wait for a carrier / wpa auth
+    while true; do
+        for n in 1 2 3 4 5; do
+            echo "waiting for carrier on $DEVICE..."
+            sleep 1
+            if [ "$(cat /sys/class/net/$DEVICE/operstate)" = "up" ]; then
+                break 2
+            fi
+        done
+        if [ -r /tmp/wpa_supplicant.pid ]; then
+            echo "retrying WPA auth..."
+            kill -HUP "$(cat /tmp/wpa_supplicant.pid)"
+        fi
+    done
+
+    ipconfig -t "$TIMEOUT $DEVICE" | tee "/netboot-$DEVICE.config"
+    # shellcheck disable=SC1090
+    . /run/net-$DEVICE.conf
+
+    # calculate the store manager's IP address if not provided
+    if [ -z "${WISE_SMIP}" ]; then
+        WISE_SMIP="$(echo "$IPV4ADDR" | cut -d. -f1-3).250"
+    fi
+
+    # create a ramfs to download the squashfs to
+    mkdir -p /root
+    mount -t ramfs ram /root
+
+    # grab the version of wise-display from the remote server
+    echo "fetching http://$WISE_SMIP:$WISE_SMPORT/${FS_NAME}.version"
+    for n in 1 2 3 4 5; do
+        wget "http://$WISE_SMIP:$WISE_SMPORT/${FS_NAME}.version" -O /root/version.txt && break
+        sleep 1
+    done
+    REMOTE_VERSION=$(cat /root/version.txt 2>/dev/null)
+
+    # try using a locally cached version of squashfs
+    if mount.util-linux -L ROOT /mnt && [ -e /mnt/version.txt ]; then
+        echo "local cache and version.txt found"
+        LOCAL_VERSION=$(cat /mnt/version.txt)
+        # compare local and remote versions
+        if [ "x${REMOTE_VERSION}" = "x${LOCAL_VERSION}" ]; then
+            echo "versions match"
+            # check that the md5 of the image is correct
+            if [ -r /mnt/fs.squashfs ] && [ -r /mnt/fs.squashfs.sum ]; then
+                echo "fs.squashfs and fs.squashfs.sum present"
+                sum1=$(cat /mnt/fs.squashfs.sum)
+                sum2=$(md5sum /mnt/fs.squashfs | cut -d' ' -f1)
+                if [ "x${sum1}" = "x${sum2}" ]; then
+                    echo "fs.squashfs checksums match, using cached version"
+                    umount /root
+                    mount.util-linux --move /mnt /root
+                    _local_squash=true
+                else
+                    echo "fs.squashfs checksum mismatch"
+                fi
+            else
+                echo "fs.squashfs or fs.squashfs.sum missing"
+            fi
+        else
+            echo "fs.squashfs version mismatch"
+        fi
+    fi
+
+    umount /mnt || true
+
+    # if we didn't find a working local squashfs, netboot
+    if [ -z $_local_squash ]; then
+        echo "no suitable cached fs.squashfs found, netbooting"
+        # random delay to prevent thundering hurd problem
+        if [ -n "$DELAY" ]; then
+            if [ "$DELAY" -gt 0 ]; then
+                # use nanoseconds since boot, dhcp adds enough entropy
+                d=$(date +%N)
+                d=$((d%DELAY))
+                echo "delaying $d seconds..."
+                sleep $d
+            fi
+        fi
+        netboot_fs_url="http://$WISE_SMIP:$WISE_SMPORT/$FS_NAME"
+        echo "fetching ${netboot_fs_url}..."
+        for attempt_n in 1 2 3 4 5; do
+            wget "${netboot_fs_url}" -O /root/fs.squashfs && break
+            echo "Attempt ${attempt_n} to download ${netboot_fs_url} failed."
+            sleep 1
+        done
+
+        if [ -e /root/fs.squashfs ]; then
+            unsquashfs -f -d /root /root/fs.squashfs
+            rm -f /root/fs.squashfs
+        fi
+    fi
+
+    # release our DHCP lease
+    echo "releasing dhcp lease..."
+    ip addr flush dev $DEVICE
+
+    touch /etc/fstab
+
+    # this will generally get overwritten, but doesn't hurt
+    cat > /root/etc/hosts << _EOF
+# eatsa-initrd-netboot
+127.0.0.1 localhost
+$WISE_SMIP storemanager
+_EOF
+    cp /run/net-$DEVICE.conf /root/etc/netboot-if.conf
+
+    echo "/scripts/netboot done."
+}
