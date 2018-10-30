@@ -2,6 +2,25 @@
 #
 # build the odroid-c2 os image.
 #
+# The general steps in building any os image should be:
+# 1. produce a root filesystem
+#   * This is normally done using a tool like `debootstrap`.
+#   * In this build, we use an already built os image and extract the root
+#     filesystem out of it since it avoids downloading source code and
+#     and cross compiling everything.
+#   * Use Yocto or Buildroot to build a root filesystem.
+#
+# 2. Create an image file
+#   * Generally, create a blank image file.
+#   * Write a MBR/GPT (mount blank image on a loop device and fdisk it)
+#     * We create 4 paritions here: BOOT, /data, and two partitions for the
+#       root filesystems.  /data will store which root filesystem is active.
+#     * We don't create more than 4 partitions to keep it simple and not need
+#       to use extended partitions.
+#   * dd the boot loader
+#   * create a boot partition
+#   * dd the root filesystem onto a partition of the blank image file
+#
 # Not using build-framework to simplify reading and comprehension.
 #
 # Environment variables:
@@ -57,12 +76,20 @@ run_download_smartshelf_software
 
 # import
 . image_utils.sh
-. resize.sh
+. partition_utils.sh
 
 # Grow the disk image before attaching it to a loop device, otherwise the
 # file size changes won't be reflected when already attached to loop device.
-# Not the best function signature, see the definition inside resize.sh
-run_expand_file
+#
+# https://wiki.odroid.com/odroid-c2/software/partition_table
+# BL1 / MBR : sector 0 to 96, sector=512 bytes
+# u-boot    : sector 97 to 1503, sector=512 bytes
+# BOOT      : sector 2048 to 264191, total bytes so far = 264192*512=135266304
+# ROOT1     : 2G = 2147483648 bytes, = 4194304 sectors
+# ROOT2     : 2G = 2147483648 bytes
+# DATA      : 1G = 1073741824 bytes, = 2097152 sectors
+# Total size = 135266304 + 5 * 1073741824 = 5503975424 bytes
+pt_utils_expand_file "${work_output_image}" 5503975424
 
 # Mount the image's partitions and write to them.
 
@@ -74,7 +101,7 @@ with_loop_device "${loop_device}" "${work_output_image}"
 
 # Grow the disk image file.
 # Expand the the file system to fill the expanded disk size.
-run_resize_partition "${loop_device}" 2
+pt_utils_create_partitions "${loop_device}"
 
 # image_utils.sh - mounts the partitions and auto umount when script exits.
 with_mount "${loop_device}p2" "${rootfs_dir}"
@@ -93,12 +120,12 @@ temp_disable_invoke_rc_d "${rootfs_dir}"
 . install_base_system.sh
 run_install_base_system
 
-. install_eatsa_user.sh
-run_install_eatsa_user
-
-# call boot customizations last
+# remember to call update_uInitrd boot_customizations are made.
 . install_boot_customizations.sh
 run_install_boot_customizations
+
+. install_eatsa_user.sh
+run_install_eatsa_user
 
 # Install smartshelf software, from smartshelf_software.sh
 run_install_smartshelf_software
@@ -164,41 +191,10 @@ if [ -z "${SKIP_FULL_IMAGE_DIST}" ]; then
     . dist_full_img.sh
 fi
 
-# Do netboot customizations here, as the working .img file will be modified
-# heavily.
-
-# see http://manpages.ubuntu.com/manpages/xenial/man8/initramfs-tools.8.html
-# for a tutorial on what the files do.
-
-# overwrites many files:
-#   - /media/boot/boot.ini
-cp -Rv base-files/netboot-customizations/* "${rootfs_dir}/"
-
-# update the initial ram disk since boot.ini changed.
-update_uInitrd
-
 # create a squashfs image before unmounting
 # This code needs to move into a netboot creation step
 cleanup_chroot_mount "${rootfs_dir}" /dev/pts
 cleanup_chroot_mount "${rootfs_dir}" /sys
 cleanup_chroot_mount "${rootfs_dir}" /proc
-mksquashfs "${rootfs_dir}" filesystem-odroid_c2.squashfs -b 4096 -e boot
+mksquashfs "${rootfs_dir}" filesystem-odroid_c2.squashfs -b 4096 -e media/boot
 mv filesystem-odroid_c2.squashfs "./dist/filesystem-odroid_c2-${dist_version}.squashfs"
-
-# netboot boot image
-# copy over the MBR and boot partition
-dd if="${work_output_image}" of="${work_output_image}-netboot.img" bs=512 count=264192
-# fix the partition table, as we didn't copy over partition #2!
-loop_device_netboot=$(losetup -f)
-with_loop_device "${loop_device_netboot}" "${work_output_image}-netboot.img" "skip_partprobe"
-# delete partition 2
-# The funky syntax: run fdisk with the here-document (<<EOF) and return 'true'
-# regardless of fdisk return code
-fdisk -u "${loop_device_netboot}" <<EOF || true
-d
-2
-w
-EOF
-partprobe "${loop_device_netboot}"
-echo "it all worked!"
-# mount the partition and write new boot.ini for netbooting

@@ -2,6 +2,8 @@
 
 [ "$IFACE" = lo ] && exit 0
 
+echo "Starting $0"
+
 # this is save from the initial netboot dhcp request
 # create it if it does not exist so otehr scripts can use it
 # (it will always exist if we boot from wlan0)
@@ -54,3 +56,5 @@ echo "$myname" > /etc/hostname
 
 # we call this to force a time set on boot
 systemctl restart openntpd
+
+echo "Finished $0"

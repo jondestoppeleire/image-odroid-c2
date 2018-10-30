@@ -1,6 +1,8 @@
 #!/bin/bash
 # /deploy/wise-display/
 
+echo "Starting $0"
+
 eth_mac=$(sed 's/://g' "/sys/class/net/$IFACE/address")
 [ -z "$eth_mac" ] && eth_mac=unknown
 
@@ -20,3 +22,5 @@ echo "# wise-ifpreup-hostname" > /etc/hosts
 echo "127.0.0.1 localhost $myname" >> /etc/hosts
 echo "$myname" > /etc/hostname
 /bin/hostname $myname
+
+echo "Finished $0"

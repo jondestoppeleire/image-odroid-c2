@@ -1,5 +1,6 @@
 SCRIPTS = $(shell find . -type f -name "*.sh" -not -path "./workspace/*" -not -path "./dist/*")
-SHELL_FILES = base-files/eatsa-user/etc/X11/Xsession.d/80x11-wise-xsession
+SHELL_FILES = base-files/eatsa-user/etc/X11/Xsession.d/80x11-wise-xsession \
+	base-files/boot-customization/usr/share/initramfs-tools/hooks/eatsa-initrd-hook
 BASH_FILES = base-files/base-system/etc/network/if-up.d/wise-ifpreup-hostname \
 	base-files/base-system/etc/network/if-up.d/wise-ifup-hostname
 

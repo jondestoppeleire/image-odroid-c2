@@ -16,6 +16,16 @@ if [ ! -d "${rootfs_dir}" ]; then
 fi
 
 run_install_boot_customizations() {
+    # Delete HARDKERNEL customizations
+    # This removes running resize2fs on first boot.
+    local hardkernel_files=(
+        aafirstboot
+        .first_boot
+    )
+    for hk_file in "${hardkernel_files[@]}"; do
+        rm -f "${rootfs_dir}/${hk_file}"
+    done
+
     # copy all base files over
     cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
 
