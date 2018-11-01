@@ -185,12 +185,6 @@ rm -rf "${rootfs_dir}"/usr/share/icons/*
 # sync writes any data buffered in memory out to disk.
 sync
 
-# If not skipping full image dist, compress the current .img file and mv it to
-# the ./dist directory.
-if [ -z "${SKIP_FULL_IMAGE_DIST}" ]; then
-    . dist_full_img.sh
-fi
-
 # create a squashfs image before unmounting
 # This code needs to move into a netboot creation step
 cleanup_chroot_mount "${rootfs_dir}" /dev/pts
