@@ -21,3 +21,4 @@ popd
 
 # there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
 mv "${work_output_image}.xz" "${dist}/${output_image_file}-${dist_version}.xz"
+cp "${workspace}/filesystem-odroid_c2.squashfs" "${dist}/filesystem-odroid_c2-${dist_version}.squashfs"

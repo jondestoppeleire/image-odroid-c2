@@ -46,7 +46,10 @@ readonly work_output_image="${workspace}/${output_image_file}"
 
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
+readonly data_partition_mount="${rootfs_dir}/media/data"
 
 mkdir -p "${boot_partition_mount}"
+mkdir -p "${data_partition_mount}"
 
-readonly dist_version="$(date +%Y%m%d%H%M%S)"
+# Use UTC date and NOT SERVER LOCAL DATE
+readonly dist_version="$(date -u +%s)"

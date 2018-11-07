@@ -29,9 +29,11 @@ run_install_boot_customizations() {
     # copy all base files over
     cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
 
+    chroot "${rootfs_dir}" cp "/media/boot/boot.ini.partition2" "/media/boot/boot.ini"
+
     local plymouth_themes="/usr/share/plymouth/themes"
-    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.plymouth /etc/alternatives/default.plymouth
+    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}/eatsa-logo/eatsa-logo.plymouth" /etc/alternatives/default.plymouth
 
     # not sure if this is used since we're using uboot but not grub
-    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}"/eatsa-logo/eatsa-logo.grub /etc/alternatives/default.plymouth.grub
+    chroot "${rootfs_dir}" ln -fs "${plymouth_themes}/eatsa-logo/eatsa-logo.grub" /etc/alternatives/default.plymouth.grub
 }

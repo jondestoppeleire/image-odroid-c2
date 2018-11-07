@@ -130,6 +130,12 @@ run_install_eatsa_user
 # Install smartshelf software, from smartshelf_software.sh
 run_install_smartshelf_software
 
+# Write version file to partitions
+# The upgrade scripts in base-files
+echo "${dist_version}" > "${rootfs_dir}/version.txt"
+cp -v "${rootfs_dir}/version.txt" "${boot_partition_mount}/version.txt"
+cp -Rv base-files/supervisor-scripts/* "${rootfs_dir}/"
+
 # Generate new initrd to capture changes from everything above.
 # Remove unused kernels
 readonly removable_kernels=$(chroot "${rootfs_dir}" dpkg -l linux-image-\* | grep ^rc | awk '{ print $2 }')
@@ -190,5 +196,6 @@ sync
 cleanup_chroot_mount "${rootfs_dir}" /dev/pts
 cleanup_chroot_mount "${rootfs_dir}" /sys
 cleanup_chroot_mount "${rootfs_dir}" /proc
-mksquashfs "${rootfs_dir}" filesystem-odroid_c2.squashfs -b 4096 -e media/boot
-mv filesystem-odroid_c2.squashfs "./dist/filesystem-odroid_c2-${dist_version}.squashfs"
+cleanup_mount "${boot_partition_mount}"
+
+mksquashfs "${rootfs_dir}" "${workspace}/filesystem-odroid_c2.squashfs" -b 4096
