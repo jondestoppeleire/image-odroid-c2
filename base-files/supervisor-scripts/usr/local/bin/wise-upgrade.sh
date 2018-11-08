@@ -68,6 +68,12 @@ download_filesystem_archive() {
     images_server_url=$(get_images_server_url)
     latest_sha256sum=$(get_latest_sha256sum "${images_server_url}" "${fs_name_prefix}" "sha256sum")
 
+    # There are no sha256sum files describing the images
+    if [ -z "${latest_sha256sum}" ]; then
+        echo "Expected files named like ${fs_name_prefix}*.sha256sum at \"${images_server_url}\", but non found."
+        return 1
+    fi
+
     # download "latest" sha256 file
     if curl -sSL "${images_server_url}/${latest_sha256sum}" -o "${work_dir}/${latest_sha256sum}.part"; then
         mv "${work_dir}/${latest_sha256sum}.part" "${work_dir}/${latest_sha256sum}"
@@ -81,7 +87,7 @@ download_filesystem_archive() {
     local last_used_archive
     last_used_archive=$(find "${work_dir}" -name "${fs_name_prefix}*sha256sum")
     if [ -e "${last_used_archive}" ]; then
-        pushd ${work_dir} > /dev/null 2>&1
+        pushd "${work_dir}" > /dev/null 2>&1
         if shasum -a 256 -c "${latest_sha256sum}" > /dev/null 2>&1; then
             have_latest="yes"
         fi
@@ -95,6 +101,7 @@ download_filesystem_archive() {
     fi
 
     [ -n "${DEBUG}" ] && echo "sha256sum doesn't match, downloading new file..."
+    # Grab the filename from the checksum file!
     local new_fs_archive
     new_fs_archive=$(awk '{print $2}' "${work_dir}/${latest_sha256sum}")
     curl -sSL "${images_server_url}/${new_fs_archive}" -o "${work_dir}/${new_fs_archive}.part"
@@ -110,6 +117,8 @@ download_filesystem_archive() {
         cat "${work_dir}/${latest_sha256sum}"
         return 1
     fi
+
+    echo "${work_dir}/${new_fs_archive}"
 }
 
 do_upgrade() {
@@ -119,6 +128,8 @@ do_upgrade() {
     [ -z "${work_dir}" ] && work_dir="/media/data"
     [ -z "${fs_name_prefix}" ] && fs_name_prefix="filesystem-odroid_c2"
 
+    #local fs_archive
+    #fs_archive=$(download_filesystem_archive "${work_dir}" "${fs_name_prefix}")
     download_filesystem_archive "${work_dir}" "${fs_name_prefix}"
 
     # After download_filesystem_archive, we only expect to have a .squashfs
@@ -130,3 +141,4 @@ do_upgrade() {
 
 WISE_SMIP=localhost
 do_upgrade test_wise_upgrade_work dummy-odroid_c2
+#do_upgrade test_wise_upgrade_work dummy-odroid_c2_file_not_exist
