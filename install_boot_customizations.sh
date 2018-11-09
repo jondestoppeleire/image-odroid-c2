@@ -29,7 +29,9 @@ run_install_boot_customizations() {
     # copy all base files over
     cp -Rv base-files/boot-customization/* "${rootfs_dir}/"
 
+    # use .partition2 as default
     chroot "${rootfs_dir}" cp "/media/boot/boot.ini.partition2" "/media/boot/boot.ini"
+    chroot "${rootfs_dir}" cp "/etc/fstab.partition2" "/etc/fstab"
 
     local plymouth_themes="/usr/share/plymouth/themes"
     chroot "${rootfs_dir}" ln -fs "${plymouth_themes}/eatsa-logo/eatsa-logo.plymouth" /etc/alternatives/default.plymouth

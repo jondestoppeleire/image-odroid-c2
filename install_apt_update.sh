@@ -36,6 +36,7 @@ run_install_apt_update() {
         acpid
         ifplugd
         # OS tools
+        curl
         wget
         socat
         openssh-server

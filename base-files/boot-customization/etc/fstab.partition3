@@ -1,5 +1,5 @@
 # UNCONFIGURED FSTAB FOR BASE SYSTEM
 LABEL=boot /media/boot vfat defaults 0 0
 #Following is a root partition that will be loaded via kernel arg in boot.ini
-LABEL=rootfs / ext4 errors=remount-ro,noatime 0 1
+LABEL=rootfs_p3 / ext4 errors=remount-ro,noatime 0 1
 LABEL=data /media/data ext4 defaults,noatime 0 2

@@ -91,17 +91,14 @@ pt_utils_create_partitions() {
 
     [ -n "${DEBUG}" ] && fdisk -l "${loop_device}"
 
+    # Rename partitions for our own purposes so we can swap them easily.
     _expand_filesystem "${loop_device}" 2
+    e2label "${loop_device}p2" rootfs_p2
 
     mkfs.ext4 "${loop_device}p3"
-    e2label "${loop_device}p3" other
+    e2label "${loop_device}p3" rootfs_p3
 
     # create filesystem on partition 4
     mkfs.ext4 "${loop_device}p4"
     e2label "${loop_device}p4" data
-    # write fstab entry
-    #local part4uuid
-    #part4uuid=$(blkid "${loop_device}p4" -s UUID -o value)
-    #echo -n "UUID=${part4uuid}" >> "${work}"
-    #/data\text4\terrors=remount-ro,noatime\t0\t1"
 }

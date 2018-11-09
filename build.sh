@@ -87,9 +87,9 @@ run_download_smartshelf_software
 # BOOT      : sector 2048 to 264191, total bytes so far = 264192*512=135266304
 # ROOT1     : 2G = 2147483648 bytes, = 4194304 sectors
 # ROOT2     : 2G = 2147483648 bytes
-# DATA      : 1G = 1073741824 bytes, = 2097152 sectors
-# Total size = 135266304 + 5 * 1073741824 = 5503975424 bytes
-pt_utils_expand_file "${work_output_image}" 5503975424
+# DATA      : 2G = 2147483648 bytes
+# Total size = 3 * 2147483648 = 6442450944 bytes
+pt_utils_expand_file "${work_output_image}" 6442450944
 
 # Mount the image's partitions and write to them.
 
@@ -99,8 +99,7 @@ loop_device=$(losetup -f)
 # use image_utils.sh functions that has auto cleanup
 with_loop_device "${loop_device}" "${work_output_image}"
 
-# Grow the disk image file.
-# Expand the the file system to fill the expanded disk size.
+# Create partitions needed for Dual Copy upgrade scheme.
 pt_utils_create_partitions "${loop_device}"
 
 # image_utils.sh - mounts the partitions and auto umount when script exits.
@@ -132,8 +131,9 @@ run_install_smartshelf_software
 
 # Write version file to partitions
 # The upgrade scripts in base-files
-echo "${dist_version}" > "${rootfs_dir}/version.txt"
-cp -v "${rootfs_dir}/version.txt" "${boot_partition_mount}/version.txt"
+echo "${dist_version}" > "${workspace}/version.txt"
+cp -v "${workspace}/version.txt" > "${rootfs_dir}/version.txt"
+cp -v "${workspace}/version.txt" "${boot_partition_mount}/version.txt"
 cp -Rv base-files/supervisor-scripts/* "${rootfs_dir}/"
 
 # Generate new initrd to capture changes from everything above.
