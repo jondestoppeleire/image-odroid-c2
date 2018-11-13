@@ -130,10 +130,11 @@ run_install_eatsa_user
 run_install_smartshelf_software
 
 # Write version file to partitions
-# The upgrade scripts in base-files
 echo "${dist_version}" > "${workspace}/version.txt"
-cp -v "${workspace}/version.txt" > "${rootfs_dir}/version.txt"
+cp -v "${workspace}/version.txt" "${rootfs_dir}/version.txt"
 cp -v "${workspace}/version.txt" "${boot_partition_mount}/version.txt"
+
+# copy over upgrade and other control scripts.
 cp -Rv base-files/supervisor-scripts/* "${rootfs_dir}/"
 
 # Generate new initrd to capture changes from everything above.

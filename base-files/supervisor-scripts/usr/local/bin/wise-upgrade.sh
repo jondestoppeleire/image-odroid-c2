@@ -119,7 +119,8 @@ download_filesystem_archive() {
 }
 
 # cleanup the mounts, either in error or success.
-wise_upgrade_cleanup() {
+wise_upgrade_umount() {
+    sync
     possible_mounts=( /media/rootfs_p2 /media/rootfs_p3 )
     for possible_mount in "${possible_mounts[@]}"; do
         if [ -d "${possible_mount}" ]; then
@@ -129,7 +130,7 @@ wise_upgrade_cleanup() {
 
 }
 
-trap wise_upgrade_cleanup EXIT SIGINT SIGQUIT
+trap wise_upgrade_umount EXIT SIGINT SIGQUIT
 
 do_upgrade() {
     local work_dir="${1}"
@@ -139,13 +140,14 @@ do_upgrade() {
     [ -z "${fs_name_prefix}" ] && fs_name_prefix="filesystem-odroid_c2"
 
     # fs_archive should be set by download_filesystem_archive if things went well
+    # code here isn't the best, as one would usually check the return of
+    # download_filesystem_archive and also not change the state of fs_archive.
     fs_archive=""
     download_filesystem_archive "${work_dir}" "${fs_name_prefix}"
     if [ -z "${fs_archive}" ]; then
         echo "download_filesystem_archive seemed to have failed."
         return 1
     fi
-    #download_filesystem_archive "${work_dir}" "${fs_name_prefix}"
 
     # After download_filesystem_archive, we only expect to have a .squashfs
     # file as the .sha256sum file is deleted.
@@ -162,6 +164,7 @@ do_upgrade() {
         partition_suffix="partition3"
     fi
 
+    wise_upgrade_umount
     mkdir -p "${update_mount}"
     mount "${update_device}" "${update_mount}"
     # if unsquashfs was unsuccessful before, we won't be able to read the
@@ -179,8 +182,13 @@ do_upgrade() {
 
     nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
       "${work_dir}/${fs_archive}"
-    cp "/media/boot/boot.ini.${partition_suffix}" "/media/boot/boot.ini"
+
     cp "${update_mount}/etc/fstab.${partition_suffix}" "${update_mount}/etc/fstab"
+
+    # For the odroid's hardkernel makes this special boot.ini file.
+    # This is the only file needed to be modified in order for boot arguments
+    # to be changed.
+    cp "/media/boot/boot.ini.${partition_suffix}" "/media/boot/boot.ini"
 }
 
 do_upgrade "$@"
