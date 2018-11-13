@@ -123,11 +123,10 @@ wise_upgrade_umount() {
     sync
     possible_mounts=( /media/rootfs_p2 /media/rootfs_p3 )
     for possible_mount in "${possible_mounts[@]}"; do
-        if [ -d "${possible_mount}" ]; then
-            mountpoint -q "${possible_mount}" && umount "${possible_mount}"
+        if [ -d "${possible_mount}" ] && mountpoint -q "${possible_mount}"; then
+            umount "${possible_mount}"
         fi
     done
-
 }
 
 trap wise_upgrade_umount EXIT SIGINT SIGQUIT
