@@ -21,10 +21,11 @@ if [ -r /etc/netboot-if.conf ]; then
     eth_mac=$(echo "$eth_mac_full" | sed 's/://g')
 fi
 
-if mount -r -L EATSACONF /mnt; then
+# This script runs as the eatsa user, so sudo is necessary to mount.
+if sudo mount -r -L EATSACONF /mnt; then
     # shellcheck disable=SC1091
     [ -r /mnt/config.txt ] && . /mnt/config.txt
-    umount /mnt
+    sudo umount /mnt
 fi
 
 if [ -n "$WISE_URL" ]; then

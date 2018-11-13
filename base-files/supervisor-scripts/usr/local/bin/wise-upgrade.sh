@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+# Downloads updates from the wise-display server.
+# Manages the downloaded artifact and does basic checking if it's the same version or not.
+# Extracts filesystem artifact to unused partition.
+# Copies over /media/boot.ini with /media/boot.ini.{the_partition} to swap which partition to boot with.
+#
+# Assumes this script is run as root.
 
 set -e
 [ -n "${DEBUG}" ] && set -x
