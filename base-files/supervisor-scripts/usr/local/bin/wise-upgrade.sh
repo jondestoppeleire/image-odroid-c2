@@ -174,14 +174,13 @@ do_upgrade() {
         if [ "${fs_name_prefix}-${version}.squashfs" = "${fs_archive}" ]; then
             # already extracted this version!  Just need reboot!
             [ -n "${DEBUG}" ] && echo "File was already unsquashed, reboot to get updates!"
-            return 0
+        else
+            nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
+              "${work_dir}/${fs_archive}"
         fi
-        # if it gets here, version doesn't match, time to unsquashfs.
     fi
 
-    nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
-      "${work_dir}/${fs_archive}"
-
+    # make sure we're mounting the right partition in fstab.
     cp "${update_mount}/etc/fstab.${partition_suffix}" "${update_mount}/etc/fstab"
 
     # For the odroid's hardkernel makes this special boot.ini file.
