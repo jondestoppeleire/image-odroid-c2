@@ -175,16 +175,19 @@ do_upgrade() {
     mount "${update_device}" "${update_mount}"
     # if unsquashfs was unsuccessful before, we won't be able to read the
     # version.txt file.  If we can read the file, assume unsquashfs was successful.
+    local already_unsquashed="no"
     if [ -f "${update_mount}/version.txt" ]; then
         local version
         version=$(cat "${update_mount}/version.txt")
         if [ "${fs_name_prefix}-${version}.squashfs" = "${fs_archive}" ]; then
-            # already extracted this version!  Just need reboot!
             [ -n "${DEBUG}" ] && echo "File was already unsquashed, reboot to get updates!"
-        else
-            nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
-              "${work_dir}/${fs_archive}"
+            already_unsquashed="yes"
         fi
+    fi
+
+    if [ "${already_unsquashed}" = "no" ]; then
+       nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
+              "${work_dir}/${fs_archive}"
     fi
 
     # make sure we're mounting the right partition in fstab.
@@ -194,6 +197,9 @@ do_upgrade() {
     # This is the only file needed to be modified in order for boot arguments
     # to be changed.
     cp "/media/boot/boot.ini.${partition_suffix}" "/media/boot/boot.ini"
+
+    # end of function should trigger the trap on wise_upgrade_umount
+    # and umount.
 }
 
 do_upgrade "$@"
