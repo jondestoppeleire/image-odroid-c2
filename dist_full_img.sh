@@ -32,5 +32,7 @@ popd
 mv "${work_output_image}.xz" "${dist}/${output_image_file}-${build_version}.xz"
 cp "${workspace}/filesystem-odroid_c2.squashfs" "${dist}/filesystem-odroid_c2-${build_version}.squashfs"
 
-shasum -a 256 "${dist}/${output_image_file}-${build_version}.xz" > "${dist}/${output_image_file}-${build_version}.xz.sha256sum"
-shasum -a 256 "${dist}/filesystem-odroid_c2-${build_version}.squashfs" > "${dist}/filesystem-odroid_c2-${build_version}.squashfs.sha256sum"
+pushd "${dist}" || exit 1
+shasum -a 256 "${output_image_file}-${build_version}.xz" > "${output_image_file}-${build_version}.xz.sha256sum"
+shasum -a 256 "filesystem-odroid_c2-${build_version}.squashfs" > "filesystem-odroid_c2-${build_version}.squashfs.sha256sum"
+popd || exit 1
