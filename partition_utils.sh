@@ -83,7 +83,7 @@ pt_utils_create_partitions() {
     # resize partition 2 - From sector 264192, + 4194304 sectors, - 1 for end of sector
     # partition 3 - from 4458496s, +4194304s, - 1 for end of sector
     # partition 4 - from 8652800s until end of disk
-    parted /dev/loop0 -s -- resizepart 2 4458495s \
+    parted "${loop_device}" -s -- resizepart 2 4458495s \
       mkpart primary ext2 4458496s 8652799s \
       mkpart primary ext2 8652800s -1s
 
