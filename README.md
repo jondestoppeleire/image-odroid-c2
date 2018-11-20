@@ -10,20 +10,23 @@ This project produces:
 
 * Install Virtualbox and Vagrant following instructions from [Local Development Environment](https://keenwawa.atlassian.net/wiki/spaces/Eng/pages/82255985/Local+development+environment).
 
-* Install docker on your system if desired; the vagrant image also installs docker.
-  * Docker for Mac link w/o signing up at Docker.com, [here](https://download.docker.com/mac/stable/Docker.dmg)
-
 ## Toolchain Environment
 
 The Vagrantfile included in this project is the development environment used
 to cross compile package across different platforms.
 
 The choice of build environment base image is based on parity with travis-ci distribution.
-Currently, this means Ubuntu 14.04.
+Currently, the base OS used is Ubuntu 14.04.
 
-This means that, yes, we're running Vagrant, and inside the Vagrant VM, docker
-is used as in the internal build environment. Inside the docker container,
-a `chroot` is used to setup the ARM binaries.
+The actual OS built is an Ubuntu 16.04 image. To use the tools compatible with
+the target OS version, Ubuntu 16.04 is run in a docker container to build the
+target OS.
+
+TL;DR:
+
+Vagrant (Ubuntu 14.04)
+ |-- Docker (Ubuntu 16.04)
+      |-- /vagrant/workspace/rootfs (chroot, for ARM64)
 
 ### Upgrading
 
@@ -47,73 +50,78 @@ Vagrant is used to simulate the travis VM.
 
 The Vagrant file should run `/vagrant/build-scripts/build-setup` automatically to install all the tools needed to build the cross compilation environmnt.
 
-### Building and distributing
+### Building
 
 To download and build an entire image:
 
-    /vagrant $ make dist
+    $ cd /vagrant
+    $ make dist
 
 and check the `./dist` directory when the build finishes.  `make build` can be called multiple times and will build as smartly (like not re-downloading files) as it can.
 
-### Odroid-c2
+### Distribution
 
-The odroid-c2 environment needs Ubuntu 16.04 LTS Xenial Xerus or higher. This
-is accomplished by building a Docker image and running bash through the
-container.
+The end distributables can be found in S3 with the appropriate permissions.
 
-#### Make the Docker image
+| AWS Account     | Techops              |
+|-----------------|----------------------|
+| S3 Bucket       | eatsa-artifacts      |
+| Folder          | wise-display         |
+| filename prefix | filesystem-odroid_c2 |
 
-A convience script to create the docker image, `sudo` as necessary:
+The image filenames are suffixed with a UTC timestamp of the build.
+A sha256sum file is provided as well.
 
-    $ ./mk_build_env.sh ubuntu-xenial
+#### Downstream Depdencies
 
-Or
+[wise-display](https://github.com/Keenwawa/wise-display) has a dependency on images produced stored in the S3 bucket. See [wise-display/build-scripts/build-install](https://github.com/Keenwawa/wise-display/blob/master/build-scripts/build-install).
 
-    $ make docker_image
+#### Flashing onto SD Card
 
-This script goes into the build-env/ directory, finds the ubuntu-xenial
-directory,  and uses the Dockerfile in that subdirectory.
+Recommended to use [Etcher](https://www.balena.io/etcher/).
+Download the latest image and use Etcher to flash it on an SD card.
 
-#### Run the image as a container
+**The required minimum SD card size is 8GB.**
 
-Using the lower level script to kick off a build:
+#### Over The Air (OTA) updates
 
-    $ ./run_build_env.sh ubuntu-xenial
+Over the Air (OTA) updates is used to describe upgrading embedded linux distributions.
 
-Or
+This build of a smartshelf OS for odroid-c2 uses a Dual Copy update strategy. The benefits of this scheme is that the updates can be done in user space and allows current processes to be running. This allows debugging to be much easier, and hanging devices in the wild can be fixed in a easier way.
 
-    $ make build
+This scheme differs from the current NUC i5x and ODROID XU4 code seen in their builds in wise-display.
 
-To Debug
+##### Partitioning scheme
 
-    $ ./run_build_env.sh ubuntu-xenial /bin/bash
-    # alternatively `make shell`
+The Dual Copy update strategy utilized 4 partitions.
 
-The containers are set to be deleted when the shell exists, so any work done
-outside of mounted directories will be discarded.
+1. Normal boot partition
+   * `/dev/mmcblk0p1`
+   *  Mounted on `/media/boot` on odroid-c2.
+2. An active partition
+   * `/dev/mmcblk0p2`, initial active partition.
+   * Mounted on `/`
+3. Inactive partition
+   * `/dev/mmcblk0p3`, initial inactive partition.
+   * Not Mounted!
+4. Data partition
+   * `/dev/mmcblk0p4`
+   * Mounted on `/media/data`
+   * Used to store the latest filesystem archive (`.squashfs` file)
 
-If the container isn't cleaned up, do it manually with the docker commands, ex:
-(output formatted for better reading)
+##### Update process
 
-    $ sudo docker ps
-    CONTAINER ID  IMAGE                                          COMMAND     CREATED      STATUS      PORTS NAMES
-    2030c8491f70  eatsa-odroid-c2-rootfs:build-env-ubuntu-xenial "/bin/bash" 17 hours ago Up 17 hours       mystifying_kel
-    $ docker kill 2030c8491f70
+`/usr/local/bin/wise-upgrade.sh`:
+1. Detect and download latest `.squashfs.sha256sum` file.
+2. Download latest `.squashfs` file referenced by `.squashfs.sha256sum` file.
+3. Compare `/version.txt` to the UTC timestamp in downloaded filename.
+4. If versions differ, unsquash and mount `.squashfs` file to `/media/rootfs_pX`, where X is the inactive partiion #.
+5. Update `fstab` file on inactive partition.
+6. Update `/media/boot/boot.ini` to boot with the updated partition.
 
-#### Updates to the Dockerfile(s)
+Reboot to use the update.  Run the script again to swap partitions, with or without updates.
 
-If the Dockerfiles are updated, don't forget to stop the containers, delete
-the current image, and recreate the build environment.  No image versioning is
-scripted at the moment - a future improvement to do.
+The scripts are available through the supervisord web interface.
 
-    $ sudo docker images
-    bensonfung@MBP-BensonF ~ $ docker images
-    REPOSITORY                TAG                       IMAGE ID            CREATED             SIZE
-    eatsa-odroid-c2-rootfs    build-env-ubuntu-xenial   ba3f94d78660        4 days ago          488MB
-    eatsa-odroid-c2-rootfs    build-env-ubuntu-bionic   25d2ae25f16f        5 days ago          480MB
-    ubuntu                    xenial                    52b10959e8aa        2 weeks ago         115MB
-    $ sudo docker rmi ba3f94d78660
-
-### On going maintaince
-
-The built images are stored in https://s3.amazonaws.com/eatsa-artifacts/wise-display/ - clean this directory out regularly as the images built are fairly large and can cost a lot to store many of them.
+References:
+* [Updating Embedded Linux Devices: Update strategies](https://mkrak.org/2018/01/10/updating-embedded-linux-devices-part1/)
