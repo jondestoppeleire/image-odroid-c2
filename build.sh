@@ -70,9 +70,10 @@ if [ ! -e "${work_output_image}" ]; then
 fi
 
 # Download required software before doing time expensive operations.
-# Remove this to make this project more generic.
+# Extract this out to make this project more generic for other purposes.
+# $fw_smartshelf_version is defined in ./setup.sh
 . smartshelf_software.sh
-run_download_smartshelf_software
+run_download_smartshelf_software "${fw_smartshelf_version}"
 
 # import
 . image_utils.sh
@@ -127,7 +128,7 @@ run_install_boot_customizations
 run_install_eatsa_user
 
 # Install smartshelf software, from smartshelf_software.sh
-run_install_smartshelf_software
+run_install_smartshelf_software "${fw_smartshelf_version}"
 
 # Write version file to partitions
 echo "${dist_version}" > "${workspace}/version.txt"
@@ -144,6 +145,7 @@ if [ -n "${removable_kernels}" ]; then
     echo "${removable_kernels[@]}" | xargs chroot "${rootfs_dir}" dpkg --purge
 fi
 
+# Function used as in development code, we needed to run this section multiple times.
 update_uInitrd() {
     # Find the kernel version that's installed
     # bash-fu breakdown:
@@ -168,10 +170,6 @@ update_uInitrd() {
 }
 
 update_uInitrd
-
-# Need to build the debarchive file before deleting the files.
-# This debarchive thing is a vestage from wise-display/build-scripts/build-install
-. build_debarchive.sh
 
 # clean up
 # As defined in wise-display/build-scripts/build-install
