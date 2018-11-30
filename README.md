@@ -63,14 +63,21 @@ and check the `./dist` directory when the build finishes.  `make build` can be c
 
 The end distributables can be found in S3 with the appropriate permissions.
 
-| AWS Account     | Techops              |
-|-----------------|----------------------|
-| S3 Bucket       | eatsa-artifacts      |
-| Folder          | wise-display         |
-| filename prefix | filesystem-odroid_c2 |
+| AWS Account       | Techops                    |
+|-------------------|----------------------------|
+| S3 Bucket         | eatsa-artifacts            |
+| Folder            | wise-display               |
+| filename prefix   |                            |
+|   upgrade package | filesystem-odroid_c2       |
+|   full flash img  | eatsa-smartshelf-odroid-c2 |
 
 The image filenames are suffixed with a UTC timestamp of the build.
 A sha256sum file is provided as well.
+
+#### Dependencies
+
+This current build depends on the [fw-smartshelf](https://github.com/Keenwawa/fw-smartshelf) project.
+The artifacts of that project are built and pulled from S3 in the folder: `eatsa-artifacts/fw-smartshelf/process_controller-*.tgz`.
 
 #### Downstream Depdencies
 
@@ -78,7 +85,7 @@ A sha256sum file is provided as well.
 
 #### Flashing onto SD Card
 
-Recommended to use [Etcher](https://www.balena.io/etcher/).
+For development, flash the full image to a SD Card. Recommendto use [Etcher](https://www.balena.io/etcher/).
 Download the latest image and use Etcher to flash it on an SD card.
 
 **The required minimum SD card size is 8GB.**
@@ -87,7 +94,11 @@ Download the latest image and use Etcher to flash it on an SD card.
 
 Over the Air (OTA) updates is used to describe upgrading embedded linux distributions.
 
-This build of a smartshelf OS for odroid-c2 uses a Dual Copy update strategy. The benefits of this scheme is that the updates can be done in user space and allows current processes to be running. This allows debugging to be much easier, and hanging devices in the wild can be fixed in a easier way.
+This build of a smartshelf OS for odroid-c2 uses a Dual Copy update strategy.
+The Dual Copy strategy uses an active and an inactive disk partition.  Updates
+are written to the inactive partition and swapped to upon reboot of the device.
+
+The benefits of this scheme is that the updates can be done in user space and allows current processes to be running. This allows debugging to be much easier, and hanging devices in the wild can be fixed in a easier way.
 
 This scheme differs from the current NUC i5x and ODROID XU4 code seen in their builds in wise-display.
 
@@ -110,6 +121,8 @@ The Dual Copy update strategy utilized 4 partitions.
    * Used to store the latest filesystem archive (`.squashfs` file)
 
 ##### Update process
+
+Available through supervisord, the following script performs the upgrade.
 
 `/usr/local/bin/wise-upgrade.sh`:
 1. Detect and download latest `.squashfs.sha256sum` file.

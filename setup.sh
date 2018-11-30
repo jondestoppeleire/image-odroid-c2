@@ -44,6 +44,8 @@ readonly work_image="${workspace}/${image_file}"
 readonly output_image_file="eatsa-smartshelf-odroid-c2.img"
 readonly work_output_image="${workspace}/${output_image_file}"
 
+readonly fw_smartshelf_version="sbux-quad-22"
+
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
 readonly data_partition_mount="${rootfs_dir}/media/data"
