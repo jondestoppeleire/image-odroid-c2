@@ -98,8 +98,8 @@ fi
 # this loop also prevents any further xsession scripts from running
 # NOTE: some odd reason, chromium does not like multi-line options and this script doesn't expand args correctly!
 while true; do
-    nice -n -20 /usr/bin/chromium-browser \
-        --incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --video-threads=4 \
-        "${chromium_mode}" \
-        "$WISE_URL"
+    /usr/bin/chromium-browser \
+      --incognito --allow-running-insecure-content --no-first-run --autoplay-policy=no-user-gesture-required --video-threads=4 \
+      "${chromium_mode}" \
+      "$WISE_URL"
 done
