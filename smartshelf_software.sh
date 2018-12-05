@@ -75,6 +75,9 @@ install_fw_smartshelf_artifact() {
     chroot "${rootfs_dir}" mkdir -p "${install_dir}"
     chroot "${rootfs_dir}" tar -xzvf "/tmp/${process_controller_name}" -C "${install_dir}"
 
+    # cleanup and make sure eatsa user has permissions to the directories just created.
+    chroot "${rootfs_dir}" chown -R eatsa:eatsa "${install_dir}"
+
     # What is npm config set unsafe-perm?
     # When running `npm install` in a docker container, we get the error `npm ERR! Cannot read property 'uid' of undefined`.
     # setting unsafe-perm fixes that.

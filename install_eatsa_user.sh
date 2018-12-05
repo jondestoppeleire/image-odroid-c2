@@ -26,7 +26,7 @@ run_install_eatsa_user() {
     chroot "${rootfs_dir}" userdel eatsa 2>/dev/null || true
 
     # /home/eatsa should've been created by install_base_system.sh
-    chroot "${rootfs_dir}" useradd -m -s /bin/bash eatsa
+    chroot "${rootfs_dir}" useradd -m -s /bin/bash --uid 1000 eatsa
     echo "eatsa:$EATSAPASS" | chroot "${rootfs_dir}" chpasswd
 
     # copy all base files over
