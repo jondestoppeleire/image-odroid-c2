@@ -197,4 +197,4 @@ cleanup_chroot_mount "${rootfs_dir}" /sys
 cleanup_chroot_mount "${rootfs_dir}" /proc
 cleanup_mount "${boot_partition_mount}"
 
-mksquashfs "${rootfs_dir}" "${workspace}/filesystem-odroid_c2.squashfs" -b 4096
+mksquashfs "${rootfs_dir}" "${workspace}/${output_filesystem_file}.squashfs" -b 4096

@@ -63,13 +63,13 @@ and check the `./dist` directory when the build finishes.  `make build` can be c
 
 The end distributables can be found in S3 with the appropriate permissions.
 
-| AWS Account       | Techops                    |
-|-------------------|----------------------------|
-| S3 Bucket         | eatsa-artifacts            |
-| Folder            | wise-display               |
-| filename prefix   |                            |
-|   upgrade package | filesystem-odroid_c2       |
-|   full flash img  | eatsa-smartshelf-odroid-c2 |
+| AWS Account       | Techops                         |
+|-------------------|---------------------------------|
+| S3 Bucket         | eatsa-artifacts                 |
+| Folder            | wise-display                    |
+| filename prefix   |                                 |
+|   upgrade package | filesystem-smartshelf-odroid_c2 |
+|   full flash img  | eatsa-smartshelf-odroid-c2      |
 
 The image filenames are suffixed with a UTC timestamp of the build.
 A sha256sum file is provided as well.
