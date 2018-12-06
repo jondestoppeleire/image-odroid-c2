@@ -30,9 +30,9 @@ popd
 
 # there should be a file in ./dist/eatsa-smartshelf-odroid-c2.img-YYYYmmddHHMMSS.xz
 mv "${work_output_image}.xz" "${dist}/${output_image_file}-${build_version}.xz"
-cp "${workspace}/filesystem-odroid_c2.squashfs" "${dist}/filesystem-odroid_c2-${build_version}.squashfs"
+cp "${workspace}/${output_filesystem_file}.squashfs" "${dist}/${output_filesystem_file}-${build_version}.squashfs"
 
 pushd "${dist}" || exit 1
 shasum -a 256 "${output_image_file}-${build_version}.xz" > "${output_image_file}-${build_version}.xz.sha256sum"
-shasum -a 256 "filesystem-odroid_c2-${build_version}.squashfs" > "filesystem-odroid_c2-${build_version}.squashfs.sha256sum"
+shasum -a 256 "${output_filesystem_file}-${build_version}.squashfs" > "${output_filesystem_file}-${build_version}.squashfs.sha256sum"
 popd || exit 1

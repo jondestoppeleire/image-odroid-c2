@@ -41,10 +41,18 @@ readonly image_url="https://s3.amazonaws.com/eatsa-artifacts/wise-display/${imag
 readonly md5sum_url="${image_url}.md5sum"
 readonly work_image_xz="${workspace}/${image_file_xz}"
 readonly work_image="${workspace}/${image_file}"
-readonly output_image_file="eatsa-smartshelf-odroid-c2.img"
+
+# IMPORTANT! if you change the value of this variable, make sure to update it
+# in the wise-upgrade.sh script used during runtime!
+readonly output_filesystem_file="filesystem-smartshelf-odroid_c2"
+
+readonly output_image_file="eatsa-smartshelf-odroid_c2.img"
 readonly work_output_image="${workspace}/${output_image_file}"
 
-readonly fw_smartshelf_version="sbux-quad-22"
+# To build multiple stable branches, change this variable to
+# read from an environmental variable.  Then set the environmental
+# variable using travis-ci's build matrix feature.
+readonly fw_smartshelf_version="sbux-quad-24"
 
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"

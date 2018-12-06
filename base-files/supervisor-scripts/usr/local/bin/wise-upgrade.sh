@@ -31,7 +31,7 @@ get_images_server_url() {
 remove_old_archives() {
     local work_dir="${1}"
     local fs_name_prefix="${2}"
-    # 1. find all files prefixed filesystem-odroid_c2
+    # 1. find all files prefixed filesystem-smartshelf-odroid_c2
     # 2. Sort by file name in reverse order.  The assumption is that the files
     #    are suffixed with unix timestamp, so newest file is first.
     # 3. tail: grab all names starting from 2nd one
@@ -143,7 +143,10 @@ do_upgrade() {
     local fs_name_prefix="${2}"
 
     [ -z "${work_dir}" ] && work_dir="/media/data"
-    [ -z "${fs_name_prefix}" ] && fs_name_prefix="filesystem-odroid_c2"
+
+    # IMPORTANT! Make sure this fs_name_prefix matches the value in setup.sh in
+    # the image-odroid-c2 repository during build time!
+    [ -z "${fs_name_prefix}" ] && fs_name_prefix="filesystem-smartshelf-odroid_c2"
 
     # fs_archive should be set by download_filesystem_archive if things went well
     # code here isn't the best, as one would usually check the return of
