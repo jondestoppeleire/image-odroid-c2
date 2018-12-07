@@ -36,18 +36,27 @@ elif [ -n "$WISE_ROLE" ] && [ -n "$WISE_ID" ]; then
     # the host storemanager is configured in /etc/hosts, no need to calculate it
     WISE_URL="http://storemanager:3000/$WISE_ROLE/$WISE_ID"
 elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 ] || [ "$number" -gt 230 ]; then
-   if [ -z "$number" ]; then
-       # we have no network connection
-       cubby="$eth_mac"
-   else
-       # we have an IP address but it's not a cubby address
-       cubby="$IPV4ADDR $eth_mac_full"
-   fi
-   sed -e "s,%%TEXT%%,$cubby," /etc/X11/address.html > /tmp/address.html
-   WISE_URL="file:///tmp/address.html"
+    if [ -z "$number" ]; then
+        # we have no network connection
+        cubby="$eth_mac"
+    else
+        # we have an IP address but it's not a cubby address
+        cubby="$IPV4ADDR $eth_mac_full"
+    fi
+    sed -e "s,%%TEXT%%,$cubby," /etc/X11/address.html > /tmp/address.html
+    WISE_URL="file:///tmp/address.html"
 elif [ "$number" -gt 200 ] && [ "$number" -lt 231 ]; then
-   # we have a proper IP address
-   WISE_URL=http://storemanager:3000/cubby/$((number-200))
+    # we have a proper IP address
+    if [ -r /wise_role.txt ]; then
+        # shellcheck disable=SC1091
+        # This should set WISE_ROLE
+        . /wise_role.txt
+    fi
+    if [ -n "$WISE_ROLE" ]; then
+        WISE_URL="http://storemanager:3000/$WISE_ROLE/$((number-200))"
+    else
+        WISE_URL=http://storemanager:3000/cubby/$((number-200))
+    fi
 else
     # unknown state
     [ -z "$eth_mac" ] && eth_mac=unknown

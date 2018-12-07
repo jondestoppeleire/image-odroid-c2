@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# This file is used to set what type of wise-display/display-manager client
+# the device is.
+#
+# If this file does not exist on a device, the default is 'cubby'. This value
+# is used to construct the URL for chromium.
+#
+# Config stick settings generally override the value in scripts that process.
+#
+# 2018-12-07 bensonf@eatsa.com
+# ----------------------------
+# Current valid values are:
+# * cubby
+# * shelf
+WISE_ROLE=shelf

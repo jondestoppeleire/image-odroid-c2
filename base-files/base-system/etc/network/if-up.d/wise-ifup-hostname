@@ -25,7 +25,14 @@ number=$(echo "$IPV4ADDR" | cut -d. -f4)
 eth_mac=$(sed 's/://g' "/sys/class/net/$IFACE/address")
 
 if [ "$number" -gt 200 ] && [ "$number" -lt 231 ]; then
-    WISE_ROLE=cubby
+    if [ -r /wise_role.txt ]; then
+        # shellcheck disable=SC1091
+        # This should set WISE_ROLE
+        . /wise_role.txt
+    fi
+    if [ -z "$WISE_ROLE" ]; then
+        WISE_ROLE=cubby
+    fi
     WISE_ID=$((number - 200))
 elif [ "$number" -lt 201 ] || [ "$number" -gt 230 ]; then
     WISE_ROLE=unconfigured
