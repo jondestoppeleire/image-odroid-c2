@@ -30,7 +30,7 @@ install:
 # travis-ci will timeout the build otherwise.  xz takes a long time (more than)
 # 10 minutes to run when zipping, and travis times out after 10 minutes.
 script:
-- make dist
+- if [ $TRAVIS_EVENT_TYPE == "pull_request" ]; then make build; else make dist; fi
 # below lines used for debugging travis issues.
 #- make build
 #- ./run_build_env.sh ubuntu-xenial ./dist_full_img.sh
