@@ -24,8 +24,12 @@ PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 #export XAUTHORITY=/tmp/Xauthority
 export DISPLAY=:0
 
-# Initiate upgrade in background.
-sudo supervisorctl start wise-upgrade
+# If the user accesses with SSH and eatsa user, don't try to run X
+if [ -z "$SSH_CLIENT" ]; then
+    # Initiate upgrade in background.
+    sudo supervisorctl start wise-upgrade
 
-# this is the command that supervisor runs.  Our issue now is what happens when this process dies.
-exec nice -n -10 /usr/bin/startx
+    # this is the command that supervisor runs.  Our issue now is what happens when this process dies.
+    #exec nice -n -10 /usr/bin/startx
+    exec /usr/bin/startx
+fi

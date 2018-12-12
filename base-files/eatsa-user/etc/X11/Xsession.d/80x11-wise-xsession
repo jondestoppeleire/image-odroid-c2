@@ -12,6 +12,8 @@
 # hide the pointer afte 1sec
 /usr/bin/unclutter -idle 1 -root &
 
+# This code and also the code that writes /tmp/address.html should live closer
+# to a network up/down part of the code, regardless of X11 starting up.
 # The file is called netboot-if.conf, but it is used regardless of netboot-ing.
 if [ -r /etc/netboot-if.conf ]; then
     # shellcheck disable=SC1091
@@ -38,10 +40,14 @@ elif [ -n "$WISE_ROLE" ] && [ -n "$WISE_ID" ]; then
 elif ! nc -w1 -z storemanager 3000 || [ "$number" -lt 201 ] || [ "$number" -gt 230 ]; then
     if [ -z "$number" ]; then
         # we have no network connection
-        cubby="$eth_mac"
+        cubby="$eth_mac_full"
     else
         # we have an IP address but it's not a cubby address
         cubby="$IPV4ADDR $eth_mac_full"
+    fi
+
+    if [ -z "$cubby" ]; then
+        cubby="Could not find MAC address nor IP address"
     fi
     sed -e "s,%%TEXT%%,$cubby," /etc/X11/address.html > /tmp/address.html
     WISE_URL="file:///tmp/address.html"
