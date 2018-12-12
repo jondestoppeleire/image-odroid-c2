@@ -1,5 +1,8 @@
 #!/bin/bash
 # /deploy/wise-display/
+#
+# This was ported from wise-display builds for nuc_5ix and odroid_xu4
+# However, using systemd-networkd seems to be better for ubuntu 16.04 and odroid-c2's
 
 echo "Starting $0"
 
