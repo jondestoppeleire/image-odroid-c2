@@ -30,6 +30,9 @@ if sudo mount -r -L EATSACONF /mnt; then
     sudo umount /mnt
 fi
 
+# Remove existing address.html
+rm -f /tmp/address.html
+
 if [ -n "$WISE_URL" ]; then
     # do nothing, use WISE_URL
     true
