@@ -4,13 +4,6 @@
 
 echo "Starting $0"
 
-# this is save from the initial netboot dhcp request
-# create it if it does not exist so otehr scripts can use it
-# (it will always exist if we boot from wlan0)
-if [ -r /etc/netboot-if.conf ]; then
-    # shellcheck disable=SC1091
-    . /etc/netboot-if.conf
-fi
 if [ -z "$IPV4ADDR" ]; then
     while [ -z "$IPV4ADDR" ]; do
         # wait for dhcp to get an address if necessary
