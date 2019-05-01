@@ -52,7 +52,7 @@ readonly work_output_image="${workspace}/${output_image_file}"
 # To build multiple stable branches, change this variable to
 # read from an environmental variable.  Then set the environmental
 # variable using travis-ci's build matrix feature.
-readonly fw_smartshelf_version="sbux-quad-28"
+readonly fw_smartshelf_version="master-74"
 
 readonly rootfs_dir="${workspace}/rootfs"
 readonly boot_partition_mount="${rootfs_dir}/media/boot"
