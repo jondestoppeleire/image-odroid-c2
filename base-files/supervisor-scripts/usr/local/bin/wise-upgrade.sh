@@ -189,6 +189,7 @@ do_upgrade() {
     fi
 
     if [ "${already_unsquashed}" = "no" ]; then
+       rm -rf "${update_mount:?}"/* && sync && sleep 1 && sync
        nice -n 19 unsquashfs -f -processors 1 -d "${update_mount}" \
               "${work_dir}/${fs_archive}"
     fi
